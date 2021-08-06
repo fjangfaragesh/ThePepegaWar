@@ -17,9 +17,7 @@ threeDGraphics.World = class{
         this.gl = gl;
         this.structures = [];
         this.viewTransformation = new Float32Array(16);
-        this.proj = new Float32Array(16); 
         glMatrix.mat4.identity(this.viewTransformation);
-        glMatrix.mat4.perspective(this.proj, 60/180*Math.PI, 1, 0.01, 1000);
     }
     addStructure(struc) {
         if(this.structures.indexOf(struc) != -1) return;
@@ -59,7 +57,7 @@ threeDGraphics.World = class{
         }
         let resources = struc.getRecources();
         for(let r of resources) {
-            r.draw(trans, this.viewTransformation, this.proj);
+            r.draw(trans, this.viewTransformation);
         }
 
         let substruc = struc.getSubStructures();
@@ -70,7 +68,10 @@ threeDGraphics.World = class{
 }
 
 threeDGraphics.TriangleTestRecource = class{
-    constructor() {};
+    constructor(texture, alt) {
+        this.image = texture;
+        this.alternative = alt;
+    };
     async init(gl) {
         this.gl = gl;
         this.vertexShader = gl.createShader(gl.VERTEX_SHADER);
@@ -100,24 +101,33 @@ threeDGraphics.TriangleTestRecource = class{
         }
         this.triangleVertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER ,this.triangleVertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, threeDGraphics.myTriangle, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER,this.alternative ? threeDGraphics.myTriangle2 : threeDGraphics.myTriangle, gl.STATIC_DRAW);
         this.posAttribLocation = gl.getAttribLocation(this.programm, "vertPosition");
         this.textCoordLocation = gl.getAttribLocation(this.programm, "vertTexCoord");
         gl.vertexAttribPointer(this.posAttribLocation, 3, gl.FLOAT, gl.FALSE, 5*Float32Array.BYTES_PER_ELEMENT,0 );
-        gl.vertexAttribPointer(this.textCoordLocation, 2, gl.FLOAT, gl.FALSE, 5*Float32Array.BYTES_PER_ELEMENT,3 );
+        gl.vertexAttribPointer(this.textCoordLocation, 2, gl.FLOAT, gl.FALSE, 5*Float32Array.BYTES_PER_ELEMENT,3*Float32Array.BYTES_PER_ELEMENT );
         gl.enableVertexAttribArray(this.posAttribLocation);
         gl.enableVertexAttribArray(this.textCoordLocation);
         this.mObjectUniformLocation = gl.getUniformLocation(this.programm, "mObject");
         this.mViewUniformLocation = gl.getUniformLocation(this.programm, "mView");
-        this.mProjUniformLocation = gl.getUniformLocation(this.programm, "mProj");
+
+        this.texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.image);
+
     }
-    draw(mObject, mView, mProj) {
+    draw(mObject, mView) {
         let gl = this.gl;
         gl.useProgram(this.programm);
+        gl.bindTexture(gl.TEXTURE_2D,this.texture);
+        gl.bindBuffer(gl.ARRAY_BUFFER,this.triangleVertexBuffer)
         gl.enable(gl.DEPTH_TEST);
         gl.uniformMatrix4fv(this.mObjectUniformLocation, gl.FALSE, mObject);
         gl.uniformMatrix4fv(this.mViewUniformLocation, gl.FALSE, mView);
-        gl.uniformMatrix4fv(this.mProjUniformLocation, gl.FALSE, mProj);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
 }
@@ -139,14 +149,13 @@ attribute vec3 vertPosition;\n
 attribute vec2 vertTexCoord;\n
 uniform mat4 mObject;\n
 uniform mat4 mView;\n
-uniform mat4 mProj;\n
 varying vec2 fragTexCoord;\n
 void main() {\n
     fragTexCoord = vertTexCoord;\n
     fragTexCoord.y = 1.0 - fragTexCoord.y;\n
-    gl_Position = mProj * mView * mObject * vec4(vertPosition, 1.0);\n
+    gl_Position = mView * mObject * vec4(vertPosition, 1.0);\n 
 }\n
-`;  
+`;  //proj * mview * mobject ...
 
 threeDGraphics.TriangleTestRecource.FragShader = `
 precision mediump float;\n
@@ -161,4 +170,10 @@ threeDGraphics.myTriangle = new Float32Array([
     0,0,0, 0,0,
     1,0,0, 1,0,
     0,1,0, 0,1
+]);
+
+threeDGraphics.myTriangle2 = new Float32Array([
+    1,0,0, 0,0,
+    0,0,0, 1,0,
+    0,1,1, 0,1
 ]);
