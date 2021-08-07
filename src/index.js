@@ -24,7 +24,7 @@ onload = async function() {
     glcanv = document.getElementById("canv");
     let world = new threeDGraphics.World(gl);
     let triangleRes = new threeDGraphics.TexturedTrianglesResource((await  ObjLoader.loadObjFile("../assets/models/basic_shapes/cube_same_texture.obj")).generateTriangles(),await Loader.loadImage("../assets/textures/test.png"));
-    let triangleRes2 = new threeDGraphics.TexturedTrianglesResource((await  ObjLoader.loadObjFile("../assets/models/boxes/coin.obj")).generateTriangles(),await Loader.loadImage("../assets/textures/palettes/hsl.png"));
+    let triangleRes2 = new threeDGraphics.TexturedTrianglesResource((await  ObjLoader.loadObjFile("../assets/models/items/coin.obj")).generateTriangles(),await Loader.loadImage("../assets/textures/palettes/hsl.png"));
     let strucPos = new Float32Array(16);
     let strucPos2 = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1,-1,1]);
     glMatrix.mat4.identity(strucPos);
