@@ -23,17 +23,46 @@ onload = async function() {
     let gl = threeDGraphics.initGL(document.getElementById("canv"));
     glcanv = document.getElementById("canv");
     let world = new threeDGraphics.World(gl);
-    let triangleRes = new threeDGraphics.TexturedTrianglesResource((await  ObjLoader.loadObjFile("../assets/models/basic_shapes/cube_same_texture.obj")).generateTriangles(),await Loader.loadImage("../assets/textures/test.png"));
-    let triangleRes2 = new threeDGraphics.TexturedTrianglesResource((await  ObjLoader.loadObjFile("../assets/models/items/coin.obj")).generateTriangles(),await Loader.loadImage("../assets/textures/palettes/hsl.png"));
-    let strucPos = new Float32Array(16);
-    let strucPos2 = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1,-1,1]);
-    glMatrix.mat4.identity(strucPos);
-    await triangleRes.init(gl);
-    await triangleRes2.init(gl);
-    let struc = new threeDGraphics.SimpleStructure(triangleRes, strucPos);
-    let struc2 = new threeDGraphics.SimpleStructure(triangleRes2, strucPos2);
-    world.addStructure(struc);
-    world.addStructure(struc2);
+    
+    let loader = new Loader.ResouceLoader();
+    loader.add(new Loader.LdResourceText("../assets/models/basic_shapes/cube_same_texture.obj"),"file:cube_same_texture.obj");
+    loader.add(new Loader.LdResourceText("../assets/models/items/coin.obj"),"file:coin.obj");
+    loader.add(new Loader.LdResourceText("../assets/models/boxes/superbox_blue.obj"),"file:superbox_blue.obj");
+    loader.add(new Loader.LdResourceImage("../assets/textures/palettes/hsl.png"),"image:hsl");
+    loader.add(new Loader.LdResourceImage("../assets/textures/test.png"),"image:test");
+    
+    loader.add(new TexturedTrianglesResourceLoader("file:superbox_blue.obj","image:hsl"), "3dRes:superbox");
+    loader.add(new TexturedTrianglesResourceLoader("file:coin.obj","image:hsl"), "3dRes:coin");
+    loader.add(new TexturedTrianglesResourceLoader("file:cube_same_texture.obj","image:test"), "3dRes:test");
+
+    
+    await loader.loadAll();
+    
+    
+    await loader.getValue("3dRes:superbox").init(gl);
+    await loader.getValue("3dRes:test").init(gl);
+    await loader.getValue("3dRes:coin").init(gl);
+    
+    
+    world.addStructure(
+        new threeDGraphics.SimpleStructure(
+            loader.getValue("3dRes:superbox"), 
+            new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1])
+        )
+    );
+    let coin = new threeDGraphics.SimpleStructure(
+            loader.getValue("3dRes:coin"), 
+            new Float32Array([0.5,0,0,0, 0,0.5,0,0, 0,0,0.5,0, 0,1,0,1])
+    );
+    world.addStructure(coin);
+        
+    world.addStructure(
+        new threeDGraphics.SimpleStructure(
+            loader.getValue("3dRes:test"), 
+            new Float32Array([0.5,0,0,0, 0,0.5,0,0, 0,0,0.5,0, 0,3,-2,1])
+        )
+    );
+
     let cam = new Camera();
     checkIfCanvasIsLocked(glcanv);
     onmousemove = function(e) {
@@ -42,9 +71,9 @@ onload = async function() {
         cam.ctrlRot2(-RM_SPEED*e.movementY*(isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
     }
     function loop() {
-        glMatrix.mat4.rotateX(strucPos2,strucPos2,0.01);
-        glMatrix.mat4.rotateY(strucPos2,strucPos2,0.00412);
-        glMatrix.mat4.rotateZ(strucPos2,strucPos2,0.00134);
+        //glMatrix.mat4.rotateX(coin.getTransformation(),coin.getTransformation(),0.1);
+        //glMatrix.mat4.rotateY(coin.getTransformation(),coin.getTransformation(),0.0412);
+        glMatrix.mat4.rotateY(coin.getTransformation(),coin.getTransformation(),0.134);
         glcanv.width = window.innerWidth;
         glcanv.height = window.innerHeight;
         gl.viewport(0,0,window.innerWidth, innerHeight)
@@ -154,3 +183,20 @@ function checkIfCanvasIsLocked(canvas) {
         }
     }
 }
+
+
+// kommt noch wo anders hin...
+class TexturedTrianglesResourceLoader extends Loader.LdResource {
+    constructor(idObjFile,idImg) {
+        super([idObjFile,idImg],"3dRes")
+        this.idObjFile = idObjFile;
+        this.idImg = idImg;
+    }
+    async loadFunction(dep) {
+        return new threeDGraphics.TexturedTrianglesResource(
+            ObjLoader.loadObjFromString(dep[this.idObjFile]).generateTriangles(),
+            dep[this.idImg]
+        );
+    }
+}
+
