@@ -23,10 +23,10 @@ onload = async function() {
     let gl = threeDGraphics.initGL(document.getElementById("canv"));
     glcanv = document.getElementById("canv");
     let world = new threeDGraphics.World(gl);
-    let triangleRes = new threeDGraphics.TriangleTestRecource(await Loader.loadImage("../assets/textures/test.png"), true);
-    let triangleRes2 = new threeDGraphics.TriangleTestRecource(await Loader.loadImage("../assets/textures/test.png"), false);
+    let triangleRes = new threeDGraphics.TexturedTrianglesResource((await  ObjLoader.loadObjFile("../assets/models/basic_shapes/cube_same_texture.obj")).generateTriangles(),await Loader.loadImage("../assets/textures/test.png"));
+    let triangleRes2 = new threeDGraphics.TexturedTrianglesResource((await  ObjLoader.loadObjFile("../assets/models/boxes/coin.obj")).generateTriangles(),await Loader.loadImage("../assets/textures/palettes/hsl.png"));
     let strucPos = new Float32Array(16);
-    let strucPos2 = new Float32Array([1,0,0,1, 0,1,0,1, 0,0,1,0, 0,0,0,1]);
+    let strucPos2 = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1,-1,1]);
     glMatrix.mat4.identity(strucPos);
     await triangleRes.init(gl);
     await triangleRes2.init(gl);
@@ -42,10 +42,12 @@ onload = async function() {
         cam.ctrlRot2(-RM_SPEED*e.movementY*(isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
     }
     function loop() {
+        glMatrix.mat4.rotateX(strucPos2,strucPos2,0.01);
+        glMatrix.mat4.rotateY(strucPos2,strucPos2,0.00412);
+        glMatrix.mat4.rotateZ(strucPos2,strucPos2,0.00134);
         glcanv.width = window.innerWidth;
         glcanv.height = window.innerHeight;
         gl.viewport(0,0,window.innerWidth, innerHeight)
-        //glMatrix.mat4.perspective(world.proj, isKeyPressed(KEY_ZOOM) ? 5/180*Math.PI : 60/180*Math.PI, , 0.01, 1000);
         cam.setWidthHightRatio(window.innerWidth/window.innerHeight);
         camCntrl(cam);
         world.setCamera(cam.updateMatrix());
