@@ -416,8 +416,6 @@ Physics.PhasePair = class {
         
         b1.applyPulse(frPulse1);
         b2.applyPulse(frPulse2);
-        
-        debugger;
     }
     
     involvesBody(id) {
