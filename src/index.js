@@ -104,18 +104,21 @@ onload = async function() {
     
     
     pworld = new Physics.World();
-    b1 = new LoveCube("A",[0,0,0],[0,0,0],2,[1,1,1]);
-    b2 = new LoveCube("B",[-2,0,0],[0,0,0],1,[1,1,1]);
-    b3 = new LoveCube("C",[2,0,0],[0,0,0],8,[1,1,1]);
-    b4 = new LoveCube("D",[4,0,0],[0,0,0],256,[0.25,4,3]);
-    brdr = new BorderCube("Border",[0,0,0],[0,0,0],1024,[20,20,20]);
+    b1 = new LoveCube("A",[0,0,0],[0,0,0],2,[1,1,1],false);
+    b2 = new LoveCube("B",[-2,0,0],[0,0,0],1,[1,1,1],false);
+    b3 = new LoveCube("C",[2,0,0],[0,0,0],8,[1,1,1],false);
+    b4 = new LoveCube("D",[4,0,0],[0,0,0],256,[0.25,4,3],false);
+    brdr = new BorderCube("Border",[0,0,0],[0,0,0],1000000,[20,20,20],true);
     pworld.bodys.push(b1);
     pworld.bodys.push(b2);
     pworld.bodys.push(b3);
     pworld.bodys.push(b4);
     pworld.bodys.push(brdr)
+    pworld.calcPhasePairs();
     function loop() {
-        
+        b1.velocity[0] = b1.velocity[0]*0.9;
+        b1.velocity[1] = b1.velocity[1]*0.9;
+        b1.velocity[2] = b1.velocity[2]*0.9;
         if (isKeyPressed(KEY_ACTION_LEFT)) b1.velocity[0] -= 1
         if (isKeyPressed(KEY_ACTION_RIGHT)) b1.velocity[0] += 1
         if (isKeyPressed(KEY_ACTION_DOWN)) b1.velocity[1] -= 1
@@ -123,9 +126,7 @@ onload = async function() {
         if (isKeyPressed(KEY_ACTION_FWD)) b1.velocity[2] -= 1
         if (isKeyPressed(KEY_ACTION_BKWD)) b1.velocity[2] += 1
         if (isKeyPressed(KEY_ACTION_STOP)) b1.velocity = [0,0,0];
-        b1.velocity[0] = b1.velocity[0]*0.9;
-        b1.velocity[1] = b1.velocity[1]*0.9;
-        b1.velocity[2] = b1.velocity[2]*0.9;
+
 
         //b1.velocity[0] += 0.5/b1.mass;
         //b4.velocity[0] -= 0.5/b4.mass;
@@ -242,6 +243,7 @@ function camCntrl(cam) {
     cam.setFieldOfView( (isKeyPressed(KEY_ZOOM) ? 5/180*Math.PI : 60/180*Math.PI) )
 }
 
+
 function checkIfCanvasIsLocked(canvas) {
     // Source - https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API 
     if ("onpointerlockchange" in document) {
@@ -283,31 +285,31 @@ class TexturedTrianglesResourceLoader extends Loader.LdResource {
 
 
 class LoveCube extends Physics.Body {
-    constructor(id,position, velocity, mass, size) {
-        super(id,position, velocity, mass);
+    constructor(id,position, velocity, mass, size, sink) {
+        super(id,position, velocity, mass, sink);
         this.size = size;
         this.setHitPhases([
-            new Physics.HitPhase(this,[-size[0]/2,0,0],Physics.HitPhase.AXIS.X,Physics.HitPhase.SIGN.POSITIVE,[size[1],size[2]]),
-            new Physics.HitPhase(this,[size[0]/2,0,0],Physics.HitPhase.AXIS.X,Physics.HitPhase.SIGN.NEGATIVE,[size[1],size[2]]),
-            new Physics.HitPhase(this,[0,-size[1]/2,0],Physics.HitPhase.AXIS.Y,Physics.HitPhase.SIGN.POSITIVE,[size[2],size[0]]),
-            new Physics.HitPhase(this,[0,size[1]/2,0],Physics.HitPhase.AXIS.Y,Physics.HitPhase.SIGN.NEGATIVE,[size[2],size[0]]),
-            new Physics.HitPhase(this,[0,0,-size[2]/2],Physics.HitPhase.AXIS.Z,Physics.HitPhase.SIGN.POSITIVE,[size[0],size[1]]),
-            new Physics.HitPhase(this,[0,0,size[2]/2],Physics.HitPhase.AXIS.Z,Physics.HitPhase.SIGN.NEGATIVE,[size[0],size[1]]),
+            new Physics.HitPhase(this,[-size[0]/2,0,0],Physics.HitPhase.AXIS.X,-Physics.HitPhase.DIRECTION.POSITIVE,[size[1],size[2]]),
+            new Physics.HitPhase(this,[size[0]/2,0,0],Physics.HitPhase.AXIS.X,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[1],size[2]]),
+            new Physics.HitPhase(this,[0,-size[1]/2,0],Physics.HitPhase.AXIS.Y,-Physics.HitPhase.DIRECTION.POSITIVE,[size[2],size[0]]),
+            new Physics.HitPhase(this,[0,size[1]/2,0],Physics.HitPhase.AXIS.Y,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[2],size[0]]),
+            new Physics.HitPhase(this,[0,0,-size[2]/2],Physics.HitPhase.AXIS.Z,-Physics.HitPhase.DIRECTION.POSITIVE,[size[0],size[1]]),
+            new Physics.HitPhase(this,[0,0,size[2]/2],Physics.HitPhase.AXIS.Z,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[0],size[1]]),
         ]);
     }
 }
 
 class BorderCube extends Physics.Body {
-    constructor(id,position, velocity, mass, size) {
-        super(id,position, velocity, mass);
+    constructor(id,position, velocity, mass, size, sink) {
+        super(id,position, velocity, mass, sink);
         this.size = size;
         this.setHitPhases([
-            new Physics.HitPhase(this,[-size[0]/2,0,0],Physics.HitPhase.AXIS.X,Physics.HitPhase.SIGN.NEGATIVE,[size[1],size[2]]),
-            new Physics.HitPhase(this,[size[0]/2,0,0],Physics.HitPhase.AXIS.X,Physics.HitPhase.SIGN.POSITIVE,[size[1],size[2]]),
-            new Physics.HitPhase(this,[0,-size[1]/2,0],Physics.HitPhase.AXIS.Y,Physics.HitPhase.SIGN.NEGATIVE,[size[2],size[0]]),
-            new Physics.HitPhase(this,[0,size[1]/2,0],Physics.HitPhase.AXIS.Y,Physics.HitPhase.SIGN.POSITIVE,[size[2],size[0]]),
-            new Physics.HitPhase(this,[0,0,-size[2]/2],Physics.HitPhase.AXIS.Z,Physics.HitPhase.SIGN.NEGATIVE,[size[0],size[1]]),
-            new Physics.HitPhase(this,[0,0,size[2]/2],Physics.HitPhase.AXIS.Z,Physics.HitPhase.SIGN.POSITIVE,[size[0],size[1]]),
+            new Physics.HitPhase(this,[-size[0]/2,0,0],Physics.HitPhase.AXIS.X,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[1],size[2]]),
+            new Physics.HitPhase(this,[size[0]/2,0,0],Physics.HitPhase.AXIS.X,-Physics.HitPhase.DIRECTION.POSITIVE,[size[1],size[2]]),
+            new Physics.HitPhase(this,[0,-size[1]/2,0],Physics.HitPhase.AXIS.Y,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[2],size[0]]),
+            new Physics.HitPhase(this,[0,size[1]/2,0],Physics.HitPhase.AXIS.Y,-Physics.HitPhase.DIRECTION.POSITIVE,[size[2],size[0]]),
+            new Physics.HitPhase(this,[0,0,-size[2]/2],Physics.HitPhase.AXIS.Z,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[0],size[1]]),
+            new Physics.HitPhase(this,[0,0,size[2]/2],Physics.HitPhase.AXIS.Z,-Physics.HitPhase.DIRECTION.POSITIVE,[size[0],size[1]]),
         ]);
     }
 }
