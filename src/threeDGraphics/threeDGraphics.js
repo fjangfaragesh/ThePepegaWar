@@ -128,31 +128,46 @@ threeDGraphics.TexturedTrianglesResource = class {
         gl.bufferData(gl.ARRAY_BUFFER,this.alternative ? threeDGraphics.myTriangle2 : this._generateBufferArray(), gl.STATIC_DRAW);
     }
     _generateBufferArray() {
-        let arr = new Float32Array(this.triangles.length*15);
+        console.log(this.triangles);
+        let m = 8*3;
+        let arr = new Float32Array(this.triangles.length*m);
         for (let i = 0; i < this.triangles.length; i++) {
             let t = this.triangles[i];
-            arr[i*15 + 0] = t.p1.x;
-            arr[i*15 + 1] = t.p1.y;
-            arr[i*15 + 2] = t.p1.z;
-            arr[i*15 + 3] = t.p1.tx;
-            arr[i*15 + 4] = t.p1.ty;
-            arr[i*15 + 5] = t.p2.x;
-            arr[i*15 + 6] = t.p2.y;
-            arr[i*15 + 7] = t.p2.z;
-            arr[i*15 + 8] = t.p2.tx;
-            arr[i*15 + 9] = t.p2.ty;
-            arr[i*15 +10] = t.p3.x;
-            arr[i*15 +11] = t.p3.y;
-            arr[i*15 +12] = t.p3.z;
-            arr[i*15 +13] = t.p3.tx;
-            arr[i*15 +14] = t.p3.ty;
+            arr[i*m + 0] = t.p1.x;
+            arr[i*m + 1] = t.p1.y;
+            arr[i*m + 2] = t.p1.z;
+            arr[i*m + 3] = t.p1.tx;
+            arr[i*m + 4] = t.p1.ty;
+            arr[i*m + 5] = t.p1.nx;
+            arr[i*m + 6] = t.p1.ny;
+            arr[i*m + 7] = t.p1.nz;
+            
+            arr[i*m + 8] = t.p2.x;
+            arr[i*m + 9] = t.p2.y;
+            arr[i*m +10] = t.p2.z;
+            arr[i*m +11] = t.p2.tx;
+            arr[i*m +12] = t.p2.ty;
+            arr[i*m +13] = t.p2.nx;
+            arr[i*m +14] = t.p2.ny;
+            arr[i*m +15] = t.p2.nz;
+            
+            arr[i*m +16] = t.p3.x;
+            arr[i*m +17] = t.p3.y;
+            arr[i*m +18] = t.p3.z;
+            arr[i*m +19] = t.p3.tx;
+            arr[i*m +20] = t.p3.ty;
+            arr[i*m +21] = t.p3.nx;
+            arr[i*m +22] = t.p3.ny;
+            arr[i*m +23] = t.p3.nz;
         }
+        //alert(arr);
         return arr;
     }
     _positions() {
         let gl = this.gl;
         this.posAttribLocation = gl.getAttribLocation(this.programm, "vertPosition");
-        this.textCoordLocation = gl.getAttribLocation(this.programm, "vertTexCoord");
+        this.textCoordAttribLocation = gl.getAttribLocation(this.programm, "vertTexCoord");
+        this.normaleAttribLocation = gl.getAttribLocation(this.programm, "vertNormale");
         this.mObjectUniformLocation = gl.getUniformLocation(this.programm, "mObject");
         this.mViewUniformLocation = gl.getUniformLocation(this.programm, "mView");
     }
@@ -175,9 +190,12 @@ threeDGraphics.TexturedTrianglesResource = class {
         
         //ah ja dad funkzioniert jeze :)
         gl.enableVertexAttribArray(this.posAttribLocation);
-        gl.enableVertexAttribArray(this.textCoordLocation);
-        gl.vertexAttribPointer(this.posAttribLocation, 3, gl.FLOAT, gl.FALSE, 5*Float32Array.BYTES_PER_ELEMENT,0 );
-        gl.vertexAttribPointer(this.textCoordLocation, 2, gl.FLOAT, gl.FALSE, 5*Float32Array.BYTES_PER_ELEMENT,3*Float32Array.BYTES_PER_ELEMENT );
+        gl.enableVertexAttribArray(this.textCoordAttribLocation);
+        gl.enableVertexAttribArray(this.normaleAttribLocation);
+        gl.vertexAttribPointer(this.posAttribLocation, 3, gl.FLOAT, gl.FALSE, 8*Float32Array.BYTES_PER_ELEMENT,0 );
+        gl.vertexAttribPointer(this.textCoordAttribLocation, 2, gl.FLOAT, gl.FALSE, 8*Float32Array.BYTES_PER_ELEMENT,3*Float32Array.BYTES_PER_ELEMENT );
+        gl.vertexAttribPointer(this.normaleAttribLocation, 3, gl.FLOAT, gl.FALSE, 8*Float32Array.BYTES_PER_ELEMENT,5*Float32Array.BYTES_PER_ELEMENT );
+
         
         gl.enable(gl.DEPTH_TEST);
         gl.uniformMatrix4fv(this.mObjectUniformLocation, gl.FALSE, mObject);
@@ -190,11 +208,14 @@ threeDGraphics.TexturedTrianglesResource.VShaderCode = `
 precision mediump float;\n
 attribute vec3 vertPosition;\n
 attribute vec2 vertTexCoord;\n
+attribute vec3 vertNormale;\n
 uniform mat4 mObject;\n
 uniform mat4 mView;\n
 varying vec2 fragTexCoord;\n
+varying vec3 fragNormale;\n
 void main() {\n
     fragTexCoord = vertTexCoord;\n
+    fragNormale = normalize(vec3(mObject * vec4(vertNormale, 0.0)));\n
     fragTexCoord.y = 1.0 - fragTexCoord.y;\n
     gl_Position = mView * mObject * vec4(vertPosition, 1.0);\n 
 }\n
@@ -203,85 +224,19 @@ void main() {\n
 threeDGraphics.TexturedTrianglesResource.FShaderCode = `
 precision mediump float;\n
 varying vec2 fragTexCoord;\n
+varying vec3 fragNormale;\n
 uniform sampler2D sampler;\n
 void main() {\n
-    gl_FragColor = texture2D(sampler, fragTexCoord);\n
+    vec3 lightDirection = normalize(vec3(-0.5,1.0,0.5));\n
+    float ligthIntensity = max(0.0, dot(fragNormale,lightDirection))*0.8 + 0.2;
+    vec4 texColor = texture2D(sampler, fragTexCoord);
+    
+    
+    gl_FragColor = vec4(vec3(texColor)*ligthIntensity,texColor.w);\n
+    //gl_FragColor = vec4(0.5*fragNormale + vec3(0.5,0.5,0.5),1.0);\n
+    //gl_FragColor = vec4(ligthIntensity,ligthIntensity,ligthIntensity,1.0);\n
 }\n
 `;
-
-
-
-threeDGraphics.TriangleTestRecource = class{
-    constructor(image, alt) {
-        this.image = image;
-        this.alternative = alt;
-    };
-    async init(gl) {
-        this.gl = gl;
-        
-        this.vertexShader = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(this.vertexShader, threeDGraphics.TriangleTestRecource.VShaderCode);
-        gl.compileShader(this.vertexShader);
-        if (!gl.getShaderParameter(this.vertexShader,gl.COMPILE_STATUS)) {
-            alert("vertexShader compilierungs fehler :(");
-            console.error(gl.getShaderInfoLog(this.vertexShader));
-            throw new Error("vertexShader compilierungs fehler :(");
-        }        
-        
-        this.fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(this.fragmentShader, threeDGraphics.TriangleTestRecource.FragShader);
-        gl.compileShader(this.fragmentShader);
-        if (!gl.getShaderParameter(this.fragmentShader,gl.COMPILE_STATUS)) {
-            alert("FragmentShader compilierungs fehler :(");
-            console.error(gl.getShaderInfoLog(this.fragmentShader));
-            throw new Error("FragmentShader compilierungs fehler :(");
-        }
-        
-        this.programm = gl.createProgram()
-        gl.attachShader(this.programm, this.vertexShader);
-        gl.attachShader(this.programm, this.fragmentShader);
-        gl.linkProgram(this.programm);
-        if (!gl.getProgramParameter(this.programm,gl.LINK_STATUS)) {
-            alert("linkungs fehler :(");
-            console.error(gl.getProgramInfoLog(this.programm));
-            throw new Error("linkungs fehler :(");
-        }
-        this.triangleVertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER ,this.triangleVertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER,this.alternative ? threeDGraphics.myTriangle2 : threeDGraphics.myTriangle, gl.STATIC_DRAW);
-        
-        this.posAttribLocation = gl.getAttribLocation(this.programm, "vertPosition");
-        this.textCoordLocation = gl.getAttribLocation(this.programm, "vertTexCoord");
-        this.mObjectUniformLocation = gl.getUniformLocation(this.programm, "mObject");
-        this.mViewUniformLocation = gl.getUniformLocation(this.programm, "mView");
-
-        this.texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.image);
-
-    }
-    draw(mObject, mView) {
-        let gl = this.gl;
-        gl.useProgram(this.programm);
-        gl.bindTexture(gl.TEXTURE_2D,this.texture);
-        gl.bindBuffer(gl.ARRAY_BUFFER,this.triangleVertexBuffer);
-        
-        //ah ja dad funkzioniert jeze :)
-        gl.enableVertexAttribArray(this.posAttribLocation);
-        gl.enableVertexAttribArray(this.textCoordLocation);
-        gl.vertexAttribPointer(this.posAttribLocation, 3, gl.FLOAT, gl.FALSE, 5*Float32Array.BYTES_PER_ELEMENT,0 );
-        gl.vertexAttribPointer(this.textCoordLocation, 2, gl.FLOAT, gl.FALSE, 5*Float32Array.BYTES_PER_ELEMENT,3*Float32Array.BYTES_PER_ELEMENT );
-        
-        gl.enable(gl.DEPTH_TEST);
-        gl.uniformMatrix4fv(this.mObjectUniformLocation, gl.FALSE, mObject);
-        gl.uniformMatrix4fv(this.mViewUniformLocation, gl.FALSE, mView);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
-}
 
 threeDGraphics.SimpleStructure = class {
     constructor(res, trans) {
@@ -293,38 +248,3 @@ threeDGraphics.SimpleStructure = class {
     getRecources() {return [this.res] }
     getTransformation() {return this.trans}
 } 
-
-threeDGraphics.TriangleTestRecource.VShaderCode = `
-precision mediump float;\n
-attribute vec3 vertPosition;\n
-attribute vec2 vertTexCoord;\n
-uniform mat4 mObject;\n
-uniform mat4 mView;\n
-varying vec2 fragTexCoord;\n
-void main() {\n
-    fragTexCoord = vertTexCoord;\n
-    fragTexCoord.y = 1.0 - fragTexCoord.y;\n
-    gl_Position = mView * mObject * vec4(vertPosition, 1.0);\n 
-}\n
-`;  //proj * mview * mobject ...
-
-threeDGraphics.TriangleTestRecource.FragShader = `
-precision mediump float;\n
-varying vec2 fragTexCoord;\n
-uniform sampler2D sampler;\n
-void main() {\n
-    gl_FragColor = texture2D(sampler, fragTexCoord);\n
-}\n
-`;
-
-threeDGraphics.myTriangle = new Float32Array([
-    0,0,0, 0,0,
-    1,0,0, 1,0,
-    0,1,0, 0,1
-]);
-
-threeDGraphics.myTriangle2 = new Float32Array([
-    1,0,0, 1,1,
-    0,0,0, 1,0,
-    0,1,1, 0,1
-]);

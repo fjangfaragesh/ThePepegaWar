@@ -93,6 +93,7 @@ ObjLoader.TextureCoord.DEFAULT = new ObjLoader.TextureCoord("",0,0);
 
 ObjLoader.Normale = class {
     constructor(id,x,y,z) {
+        this.id = id;
         this.x = x;
         this.y = y;
         this.z = z;
@@ -109,9 +110,9 @@ ObjLoader.Triangle = class {
         this.p2 = p2;//id of point2
         this.p3 = p3;//id of point3
         
-        this.n1 = t1;//normale
-        this.n2 = t2;//normale
-        this.n3 = t3;//normale
+        this.n1 = n1;//normale
+        this.n2 = n2;//normale
+        this.n3 = n3;//normale
         
         this.t1 = t1;//texture coordinate
         this.t2 = t2;//texture coordinate
@@ -131,6 +132,7 @@ ObjLoader.loadObjFromString = function(objStr) {
     let pId = 1;
     let fId = 1;
     let tId = 1;
+    let nId = 1;
     let currentMat = undefined;
     let currentGroup = undefined;
     let currentS = 0;
@@ -148,7 +150,7 @@ ObjLoader.loadObjFromString = function(objStr) {
                 ret.texCoords.push(new ObjLoader.TextureCoord(tId++, wds[1]*1, wds[2]*1));
                 break;
             case "vn":
-                ret.normales.push(new ObjLoader.Normale(tId++, wds[1]*1, wds[2]*1, wds[3]*1));
+                ret.normales.push(new ObjLoader.Normale(nId++, wds[1]*1, wds[2]*1, wds[3]*1));
                 break;
             case "g":
                 currentGroup = wds[1];

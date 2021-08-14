@@ -9,6 +9,10 @@ https://www.youtube.com/playlist?list=PLjcVFFANLS5zH_PeKC6I8p0Pt1hzph_rt
 https://de.wikipedia.org/wiki/Wavefront_OBJ  
 https://www.youtube.com/watch?v=ND86V8iglmE  
 
+Farbpalette Imphenzia: https://www.youtube.com/channel/UCzfWju7SFoWLCyV_gDVCrGA
+
+Physik:
+https://www.lernhelfer.de/schuelerlexikon/physik-abitur/artikel/einteilung-von-stoessen
 
 ## TODOs:
 
