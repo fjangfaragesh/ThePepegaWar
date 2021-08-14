@@ -29,6 +29,9 @@ let canvLockState = false;
 
 console.log("Index.js is running...");
 onload = async function() {
+    let userInputStatesManager = new UserInput.StatesManager();
+    
+    
     let gl = threeDGraphics.initGL(document.getElementById("canv"));
     glcanv = document.getElementById("canv");
     let world = new threeDGraphics.World(gl);
@@ -85,7 +88,7 @@ onload = async function() {
     let box2 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
     let box3 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:superbox"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
     let box4 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:superbox"), new Float32Array([0.25,0,0,0, 0,4,0,0, 0,0,3,0, 0,0,0,1]));
-    let bdrdbx = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([20,0,0,0, 0,5,0,0, 0,0,20,0, 0,0,0,1]));
+    let bdrdbx = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([20,0,0,0, 0,1,0,0, 0,0,20,0, 0,-5.5,0,1]));
     world.addStructure(box1);
     world.addStructure(box2);
     world.addStructure(box3);
@@ -93,36 +96,47 @@ onload = async function() {
     world.addStructure(bdrdbx);
 
     let cam = new Camera();
+    cam.ctrlMove(0,-4,0);
     checkIfCanvasIsLocked(glcanv);
-    onmousemove = function(e) {
-        if(!canvLockState) { return }
-        cam.ctrlRot1(-RM_SPEED*e.movementX*(isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
-        cam.ctrlRot2(-RM_SPEED*e.movementY*(isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
-    }
+    
+    let camController = new CamController(cam,userInputStatesManager);
     
     
+    let coeffMan = new PhysicsMaterials.CoefficientsManager();
     
-    
-    pworld = new Physics.World();
-    b1 = new LoveCube("A",[0,0,0],[0,0,0],2,[1,1,1],false);
-    b2 = new LoveCube("B",[-2,0,0],[0,0,0],1,[1,1,1],false);
-    b3 = new LoveCube("C",[2,0,0],[0,0,0],8,[1,1,1],false);
+    pworld = new Physics.World(undefined, coeffMan);
+    b1 = new LoveCube("A",[0,1,0],[0,0,0],2,[1,1,1],false);
+    b2 = new LoveCube("B",[0,-4,0],[0,0,0],1,[1,1,1],false);
+    b3 = new LoveCube("C",[0,3,0],[0,0,0],8,[1,1,1],false);
     b4 = new LoveCube("D",[4,0,0],[0,0,0],50,[0.25,4,3],false);
-    brdr = new LoveCube("Fussboden",[0,-5,0],[0,0,0],1000000,[20,5,20],true);
+    brdr = new BorderCube("Raum",[0,5,0],[0,0,0],1000000000,[20,20,20],true);
     pworld.bodys.push(b1);
     pworld.bodys.push(b2);
     pworld.bodys.push(b3);
     pworld.bodys.push(b4);
     pworld.bodys.push(brdr)
     pworld.calcPhasePairs();
+    
+    
+    coeffMan.addMaterial(PhysicsMaterials.MATERIALS.WOOD,"wood");
+    coeffMan.addMaterial(PhysicsMaterials.MATERIALS.ICE,"ice");
+    coeffMan.addMaterial(PhysicsMaterials.MATERIALS.RUBBER,"rubber");
+    coeffMan.addMaterial(PhysicsMaterials.MATERIALS.METAL,"metal");
+    
+    coeffMan.useMaterial("A","wood");
+    coeffMan.useMaterial("B","rubber");
+    coeffMan.useMaterial("C","rubber");
+    coeffMan.useMaterial("D","metal");
+    coeffMan.useMaterial("Raum","wood");
+        
     function loop() {
-        if (isKeyPressed(KEY_ACTION_LEFT)) b1.velocity[0] = (b1.velocity[0] - 1)*0.95;
-        if (isKeyPressed(KEY_ACTION_RIGHT)) b1.velocity[0] = (b1.velocity[0] + 1)*0.95;
-        if (isKeyPressed(KEY_ACTION_DOWN)) b1.velocity[1] = (b1.velocity[1] - 1)*0.95;
-        if (isKeyPressed(KEY_ACTION_UP)) b1.velocity[1] = (b1.velocity[1] + 1)*0.95;
-        if (isKeyPressed(KEY_ACTION_FWD)) b1.velocity[2] = (b1.velocity[2] - 1)*0.95;
-        if (isKeyPressed(KEY_ACTION_BKWD)) b1.velocity[2] = (b1.velocity[2] + 1)*0.95;
-        if (isKeyPressed(KEY_ACTION_STOP)) b1.velocity = [0,0,0];
+        if (userInputStatesManager.isKeyPressed(KEY_ACTION_LEFT)) b1.velocity[0] = (b1.velocity[0] - 1)*0.95;
+        if (userInputStatesManager.isKeyPressed(KEY_ACTION_RIGHT)) b1.velocity[0] = (b1.velocity[0] + 1)*0.95;
+        if (userInputStatesManager.isKeyPressed(KEY_ACTION_DOWN)) b1.velocity[1] = (b1.velocity[1] - 1)*0.95;
+        if (userInputStatesManager.isKeyPressed(KEY_ACTION_UP)) b1.velocity[1] = (b1.velocity[1] + 1)*0.95;
+        if (userInputStatesManager.isKeyPressed(KEY_ACTION_FWD)) b1.velocity[2] = (b1.velocity[2] - 1)*0.95;
+        if (userInputStatesManager.isKeyPressed(KEY_ACTION_BKWD)) b1.velocity[2] = (b1.velocity[2] + 1)*0.95;
+        if (userInputStatesManager.isKeyPressed(KEY_ACTION_STOP)) b1.velocity = [0,0,0];
 
 
 
@@ -144,20 +158,30 @@ onload = async function() {
         box4.getTransformation()[13] = b4.position[1];
         box4.getTransformation()[14] = b4.position[2];
         
-        bdrdbx.getTransformation()[12] = brdr.position[0];
-        bdrdbx.getTransformation()[13] = brdr.position[1];
-        bdrdbx.getTransformation()[14] = brdr.position[2];
+        //bdrdbx.getTransformation()[12] = brdr.position[0];
+        //bdrdbx.getTransformation()[13] = brdr.position[1];
+        //bdrdbx.getTransformation()[14] = brdr.position[2];
         // glMatrix.mat4.rotateY(coin.getTransformation(),coin.getTransformation(),0.0134);
         // glMatrix.mat4.rotateY(wuhu.getTransformation(),wuhu.getTransformation(),-0.0461);
         glcanv.width = window.innerWidth;
         glcanv.height = window.innerHeight;
         gl.viewport(0,0,window.innerWidth, innerHeight)
         cam.setWidthHightRatio(window.innerWidth/window.innerHeight);
-        camCntrl(cam);
+        camController.tick();
         world.setCamera(cam.updateMatrix());
         world.draw();
     }
     setInterval(loop, 10);
+    
+    function onUserInput(message) {
+        userInputStatesManager.send(message);
+        camController.send(message);
+//        console.log(message);
+    }
+    
+    
+    UserInput.init(onUserInput);
+
     //pworld.tick(10);
     
 }
@@ -225,20 +249,33 @@ class Camera{
 
 }
 
-function camCntrl(cam) {
-    if (isKeyPressed(KEY_FWD)) cam.ctrlMove(0,0,-SPEED);
-    if (isKeyPressed(KEY_LEFT)) cam.ctrlMove(-SPEED,0,0);
-    if (isKeyPressed(KEY_BKWD)) cam.ctrlMove(0,0,SPEED);
-    if (isKeyPressed(KEY_RIGHT)) cam.ctrlMove(SPEED,0,0);
-    if (isKeyPressed(KEY_UP)) cam.ctrlMove(0,SPEED,0);
-    if (isKeyPressed(KEY_DOWN)) cam.ctrlMove(0,-SPEED,0);
-    if (isKeyPressed(KEY_R_UP)) cam.ctrlRot2(-R_SPEED);
-    if (isKeyPressed(KEY_R_LEFT)) cam.ctrlRot1(-R_SPEED);
-    if (isKeyPressed(KEY_R_DOWN)) cam.ctrlRot2(R_SPEED);
-    if (isKeyPressed(KEY_R_RIGHT)) cam.ctrlRot1(R_SPEED);
-    cam.setFieldOfView( (isKeyPressed(KEY_ZOOM) ? 5/180*Math.PI : 60/180*Math.PI) )
+class CamController {
+    constructor(cam,userInputStatesManager) {
+        this.cam = cam;
+        this.userInputStatesManager = userInputStatesManager;
+    }
+    send(message) {
+        if (message.type !== "userinput") return;
+        if (message.source === "mouse") if (message.action === "move") {
+            if(!canvLockState) { return }
+            this.cam.ctrlRot1(-RM_SPEED*message.deltaX*(this.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
+            this.cam.ctrlRot2(-RM_SPEED*message.deltaY*(this.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
+        }
+    }
+    tick() {
+        if (this.userInputStatesManager.isKeyPressed(KEY_FWD)) this.cam.ctrlMove(0,0,-SPEED);
+        if (this.userInputStatesManager.isKeyPressed(KEY_LEFT)) this.cam.ctrlMove(-SPEED,0,0);
+        if (this.userInputStatesManager.isKeyPressed(KEY_BKWD)) this.cam.ctrlMove(0,0,SPEED);
+        if (this.userInputStatesManager.isKeyPressed(KEY_RIGHT)) this.cam.ctrlMove(SPEED,0,0);
+        if (this.userInputStatesManager.isKeyPressed(KEY_UP)) this.cam.ctrlMove(0,SPEED,0);
+        if (this.userInputStatesManager.isKeyPressed(KEY_DOWN)) this.cam.ctrlMove(0,-SPEED,0);
+        if (this.userInputStatesManager.isKeyPressed(KEY_R_UP)) this.cam.ctrlRot2(-R_SPEED);
+        if (this.userInputStatesManager.isKeyPressed(KEY_R_LEFT)) this.cam.ctrlRot1(-R_SPEED);
+        if (this.userInputStatesManager.isKeyPressed(KEY_R_DOWN)) this.cam.ctrlRot2(R_SPEED);
+        if (this.userInputStatesManager.isKeyPressed(KEY_R_RIGHT)) this.cam.ctrlRot1(R_SPEED);
+        this.cam.setFieldOfView( (this.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 5/180*Math.PI : 60/180*Math.PI) )
+    }
 }
-
 
 function checkIfCanvasIsLocked(canvas) {
     // Source - https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API 
@@ -285,12 +322,12 @@ class LoveCube extends Physics.Body {
         super(id,position, velocity, mass, sink);
         this.size = size;
         this.setHitPhases([
-            new Physics.HitPhase(this,[-size[0]/2,0,0],Physics.HitPhase.AXIS.X,-Physics.HitPhase.DIRECTION.POSITIVE,[size[1],size[2]]),
-            new Physics.HitPhase(this,[size[0]/2,0,0],Physics.HitPhase.AXIS.X,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[1],size[2]]),
-            new Physics.HitPhase(this,[0,-size[1]/2,0],Physics.HitPhase.AXIS.Y,-Physics.HitPhase.DIRECTION.POSITIVE,[size[2],size[0]]),
-            new Physics.HitPhase(this,[0,size[1]/2,0],Physics.HitPhase.AXIS.Y,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[2],size[0]]),
-            new Physics.HitPhase(this,[0,0,-size[2]/2],Physics.HitPhase.AXIS.Z,-Physics.HitPhase.DIRECTION.POSITIVE,[size[0],size[1]]),
-            new Physics.HitPhase(this,[0,0,size[2]/2],Physics.HitPhase.AXIS.Z,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[0],size[1]]),
+            new Physics.HitPhase(id+":left",this,[-size[0]/2,0,0],Physics.HitPhase.AXIS.X,Physics.HitPhase.DIRECTION.NEGATIVE,[size[1],size[2]]),
+            new Physics.HitPhase(id+":right",this,[size[0]/2,0,0],Physics.HitPhase.AXIS.X,Physics.HitPhase.DIRECTION.POSITIVE,[size[1],size[2]]),
+            new Physics.HitPhase(id+":bottom",this,[0,-size[1]/2,0],Physics.HitPhase.AXIS.Y,Physics.HitPhase.DIRECTION.NEGATIVE,[size[2],size[0]]),
+            new Physics.HitPhase(id+":top",this,[0,size[1]/2,0],Physics.HitPhase.AXIS.Y,Physics.HitPhase.DIRECTION.POSITIVE,[size[2],size[0]]),
+            new Physics.HitPhase(id+":front",this,[0,0,-size[2]/2],Physics.HitPhase.AXIS.Z,Physics.HitPhase.DIRECTION.NEGATIVE,[size[0],size[1]]),
+            new Physics.HitPhase(id+":back",this,[0,0,size[2]/2],Physics.HitPhase.AXIS.Z,Physics.HitPhase.DIRECTION.POSITIVE,[size[0],size[1]]),
         ]);
     }
 }
@@ -300,12 +337,12 @@ class BorderCube extends Physics.Body {
         super(id,position, velocity, mass, sink);
         this.size = size;
         this.setHitPhases([
-            new Physics.HitPhase(this,[-size[0]/2,0,0],Physics.HitPhase.AXIS.X,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[1],size[2]]),
-            new Physics.HitPhase(this,[size[0]/2,0,0],Physics.HitPhase.AXIS.X,-Physics.HitPhase.DIRECTION.POSITIVE,[size[1],size[2]]),
-            new Physics.HitPhase(this,[0,-size[1]/2,0],Physics.HitPhase.AXIS.Y,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[2],size[0]]),
-            new Physics.HitPhase(this,[0,size[1]/2,0],Physics.HitPhase.AXIS.Y,-Physics.HitPhase.DIRECTION.POSITIVE,[size[2],size[0]]),
-            new Physics.HitPhase(this,[0,0,-size[2]/2],Physics.HitPhase.AXIS.Z,-Physics.HitPhase.DIRECTION.NEGATIVE,[size[0],size[1]]),
-            new Physics.HitPhase(this,[0,0,size[2]/2],Physics.HitPhase.AXIS.Z,-Physics.HitPhase.DIRECTION.POSITIVE,[size[0],size[1]]),
+            new Physics.HitPhase(id+":left",this,[-size[0]/2,0,0],Physics.HitPhase.AXIS.X,Physics.HitPhase.DIRECTION.POSITIVE,[size[1],size[2]]),
+            new Physics.HitPhase(id+":right",this,[size[0]/2,0,0],Physics.HitPhase.AXIS.X,Physics.HitPhase.DIRECTION.NEGATIVE,[size[1],size[2]]),
+            new Physics.HitPhase(id+":bottom",this,[0,-size[1]/2,0],Physics.HitPhase.AXIS.Y,Physics.HitPhase.DIRECTION.POSITIVE,[size[2],size[0]]),
+            new Physics.HitPhase(id+":top",this,[0,size[1]/2,0],Physics.HitPhase.AXIS.Y,Physics.HitPhase.DIRECTION.NEGATIVE,[size[2],size[0]]),
+            new Physics.HitPhase(id+":front",this,[0,0,-size[2]/2],Physics.HitPhase.AXIS.Z,Physics.HitPhase.DIRECTION.POSITIVE,[size[0],size[1]]),
+            new Physics.HitPhase(id+":back",this,[0,0,size[2]/2],Physics.HitPhase.AXIS.Z,Physics.HitPhase.DIRECTION.NEGATIVE,[size[0],size[1]]),
         ]);
     }
 }

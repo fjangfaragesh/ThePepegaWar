@@ -1,9 +1,12 @@
 const Physics = {};
 
 Physics.World = class {
-    constructor() {
+    constructor(collisionManager,coefficientsManager) {
         this.bodys = [];
-        this.shocker = function(id1,id2) {return id1 !== id2};
+        
+        this.collisionManager = collisionManager ?? new Physics.DefaultCollisionManager();// dieses ding wird gefragt, ob sich zwei flächen verschiedener Körper stoßen
+        this.coefficientsManager = coefficientsManager ?? new Physics.DefaultCoefficientsManager(); // dieses Ding wird nach elastizitätskoeffizient und gleitreibungskoeffizient zweier flächen gefragt
+        
         this.globalTime = 0;
         
         this.gravity = [0.0,-9.81,0.0];
@@ -15,12 +18,13 @@ Physics.World = class {
         for (let ib1 = 0; ib1 < this.bodys.length; ib1++) for (let ib2 = 0; ib2 < ib1; ib2++) {
             let b1 = this.bodys[ib1];
             let b2 = this.bodys[ib2];
-            if (!this.shocker(b1,b2)) continue;        
+            if (!this.collisionManager.canTheyCollide(b1.id,b2.id)) continue;        
             let hps1 = b1.getHitPhases();
             let hps2 = b2.getHitPhases();
             for (let hp1 of hps1) for (let hp2 of hps2) {
                 if (hp1.normaleAxis !== hp2.normaleAxis) continue;
                 if (hp1.direction === hp2.direction) continue;
+                if (!this.collisionManager.canTheyCollide(b1.id,b2.id, hp1.id,hp2.id)) continue;    
                 this.phasePairs.push(new Physics.PhasePair(hp1,hp2));
             }
         }
@@ -28,7 +32,7 @@ Physics.World = class {
     
     
     tick(dt) {
-        console.log("TICK");
+        //console.log("TICK");
         let t = 0;
         let n = 0;
         
@@ -37,8 +41,8 @@ Physics.World = class {
          }
         
         for (let hitPhasePair of this.phasePairs) {
-            hitPhasePair.elastic();
-            hitPhasePair.friction();// hier spielt die berechnungs reihenfolge ne rolle, aber vielleicht gehts ja trotzdem relativ gut...
+            hitPhasePair.elastic(this.coefficientsManager);
+            hitPhasePair.friction(this.coefficientsManager);// hier spielt die berechnungs reihenfolge ne rolle, aber vielleicht gehts ja trotzdem relativ gut...
         }
         
         for (let b of this.bodys) b.prepareForNextTick();
@@ -48,7 +52,6 @@ Physics.World = class {
         }
         while (true) {
             //alert();
-            
             
             //suchen nach dem Flächenpaar, welches als nächstes stößt  TODO: insert sort, ...
             let minT = Infinity;
@@ -164,7 +167,8 @@ Physics.Body = class {
 }
 
 Physics.HitPhase = class {
-    constructor(body,centerPos,normaleAxis,direction,size) {
+    constructor(id ,body,centerPos,normaleAxis,direction,size) {
+        this.id = id;// jede Oberfläche (auch von verschiedenen Körpern) braucht eine eigene Id!
         this.body = body;
         this.centerPos = centerPos;
         this.normaleAxis = normaleAxis;
@@ -219,7 +223,7 @@ Physics.PhasePair = class {
         let xA0 = xA - vA*tOffsetA;
         let xB0 = xB - vB*tOffsetB;
         let t = (xB0 - xA0)/(vA - vB);
-        if (xB0 - xA0 < 0.001 && xB0 - xA0 > -0.001) {
+        if (xB0 - xA0 < 0.001 && xB0 - xA0 > -0.01) {
             this.time = currentT;
             return;
         }
@@ -328,11 +332,11 @@ Physics.PhasePair = class {
         // "gezogene" aus Verband entfernen
         this.phaseA.body.walkThroughTouchings(this.phaseA.normaleAxis, Physics.HitPhase.DIRECTION.NEGATIVE, function(body, pulses, pair) {
              let inversePhasePairGraphEdges = body.getTouchings(current.phaseA.normaleAxis, Physics.HitPhase.DIRECTION.POSITIVE).slice();
-             for (let ppge of inversePhasePairGraphEdges) if(ppge.hitPhasePair !== pair) ppge.hitPhasePair.unTouch();
+             for (let ppge of inversePhasePairGraphEdges) if(ppge.hitPhasePair !== pair) ppge.hitPhasePair.unTouchIfNecessary();
         },this);
         this.phaseB.body.walkThroughTouchings(this.phaseB.normaleAxis, Physics.HitPhase.DIRECTION.POSITIVE, function(body, pulses, pair) {
              let inversePhasePairGraphEdges = body.getTouchings(current.phaseB.normaleAxis, Physics.HitPhase.DIRECTION.NEGATIVE).slice();
-             for (let ppge of inversePhasePairGraphEdges) if(ppge.hitPhasePair !== pair) ppge.hitPhasePair.unTouch();
+             for (let ppge of inversePhasePairGraphEdges) if(ppge.hitPhasePair !== pair) ppge.hitPhasePair.unTouchIfNecessary();
         },this);
         
         
@@ -357,18 +361,21 @@ Physics.PhasePair = class {
         let indexB = tchB.findIndex((el)=>el.hitPhasePair === this);
         if (indexB !== -1) tchB.splice(indexB,1);
     }
-    prepareForNextTick() {
+    unTouchIfNecessary() {
         let ax = this.phaseA.normaleAxis;
+        if (this.isTouching && this.phaseA.body.velocity[ax] !== this.phaseB.body.velocity[ax]) this.unTouch();
+    }
+    prepareForNextTick() {
         this.compressionPulse = 0.0;
         
-        if (this.isTouching && this.phaseA.body.velocity[ax] !== this.phaseB.body.velocity[ax]) this.unTouch();
+        this.unTouchIfNecessary();
     }
     
     
-    elastic() {
+    elastic(coefficientsManager) {
         if (this.compressionPulse === 0.0) return;
 
-        let k = 0.5;//TODO
+        let k = coefficientsManager.getK(this.phaseA.body.id, this.phaseB.body.id, this.phaseA.id, this.phaseB.id);
         
         let ax = this.phaseA.normaleAxis;
         let pA = [0,0,0];
@@ -378,10 +385,10 @@ Physics.PhasePair = class {
         pB[ax] = this.compressionPulse*k/2.0;
         this.phaseB.body.applyPulse(pB);
     }
-    friction() {
+    friction(coefficientsManager) {
         if (this.compressionPulse === 0.0) return;
         
-        let my = 0.9;//TODO
+        let my = coefficientsManager.getMy(this.phaseA.body.id, this.phaseB.body.id, this.phaseA.id, this.phaseB.id);
         
         let ax = this.phaseA.normaleAxis;
         let axU = (ax+1)%3;
@@ -429,3 +436,26 @@ Physics.TouchingHitPhaseGraphEdge = class {
         this.hitPhasePair = hitPhasePair;
     }
 }
+
+Physics.DefaultCollisionManager = class {
+    constructor() {
+        
+    }
+    canTheyCollide(body1id,body2id, hitPhase1id, hitPhase2id) {
+        if (body1id === body2id) return false;
+        return true;
+    }
+}
+Physics.DefaultCoefficientsManager = class {
+    constructor(my,k) {
+        this.my = my ?? 0.75;// gleitreibungskoeffizient
+        this.k = k ?? 0.25;// elastizitätskoeffizient (0: vollkommen unelastisch, 1: vollkommen elastisch, dazwischen: was dazwischen halt)
+    }
+    getMy(body1id,body2id, hitPhase1id, hitPhase2id) {
+        return this.my;
+    }
+    getK(body1id,body2id, hitPhase1id, hitPhase2id) {
+        return this.k;
+    }
+}
+
