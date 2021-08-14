@@ -85,7 +85,7 @@ onload = async function() {
     let box2 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
     let box3 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:superbox"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
     let box4 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:superbox"), new Float32Array([0.25,0,0,0, 0,4,0,0, 0,0,3,0, 0,0,0,1]));
-    let bdrdbx = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([20,0,0,0, 0,20,0,0, 0,0,20,0, 0,0,0,1]));
+    let bdrdbx = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([20,0,0,0, 0,5,0,0, 0,0,20,0, 0,0,0,1]));
     world.addStructure(box1);
     world.addStructure(box2);
     world.addStructure(box3);
@@ -107,8 +107,8 @@ onload = async function() {
     b1 = new LoveCube("A",[0,0,0],[0,0,0],2,[1,1,1],false);
     b2 = new LoveCube("B",[-2,0,0],[0,0,0],1,[1,1,1],false);
     b3 = new LoveCube("C",[2,0,0],[0,0,0],8,[1,1,1],false);
-    b4 = new LoveCube("D",[4,0,0],[0,0,0],256,[0.25,4,3],false);
-    brdr = new BorderCube("Border",[0,0,0],[0,0,0],1000000,[20,20,20],true);
+    b4 = new LoveCube("D",[4,0,0],[0,0,0],50,[0.25,4,3],false);
+    brdr = new LoveCube("Fussboden",[0,-5,0],[0,0,0],1000000,[20,5,20],true);
     pworld.bodys.push(b1);
     pworld.bodys.push(b2);
     pworld.bodys.push(b3);
@@ -116,20 +116,16 @@ onload = async function() {
     pworld.bodys.push(brdr)
     pworld.calcPhasePairs();
     function loop() {
-        b1.velocity[0] = b1.velocity[0]*0.9;
-        b1.velocity[1] = b1.velocity[1]*0.9;
-        b1.velocity[2] = b1.velocity[2]*0.9;
-        if (isKeyPressed(KEY_ACTION_LEFT)) b1.velocity[0] -= 1
-        if (isKeyPressed(KEY_ACTION_RIGHT)) b1.velocity[0] += 1
-        if (isKeyPressed(KEY_ACTION_DOWN)) b1.velocity[1] -= 1
-        if (isKeyPressed(KEY_ACTION_UP)) b1.velocity[1] += 1
-        if (isKeyPressed(KEY_ACTION_FWD)) b1.velocity[2] -= 1
-        if (isKeyPressed(KEY_ACTION_BKWD)) b1.velocity[2] += 1
+        if (isKeyPressed(KEY_ACTION_LEFT)) b1.velocity[0] = (b1.velocity[0] - 1)*0.95;
+        if (isKeyPressed(KEY_ACTION_RIGHT)) b1.velocity[0] = (b1.velocity[0] + 1)*0.95;
+        if (isKeyPressed(KEY_ACTION_DOWN)) b1.velocity[1] = (b1.velocity[1] - 1)*0.95;
+        if (isKeyPressed(KEY_ACTION_UP)) b1.velocity[1] = (b1.velocity[1] + 1)*0.95;
+        if (isKeyPressed(KEY_ACTION_FWD)) b1.velocity[2] = (b1.velocity[2] - 1)*0.95;
+        if (isKeyPressed(KEY_ACTION_BKWD)) b1.velocity[2] = (b1.velocity[2] + 1)*0.95;
         if (isKeyPressed(KEY_ACTION_STOP)) b1.velocity = [0,0,0];
 
 
-        //b1.velocity[0] += 0.5/b1.mass;
-        //b4.velocity[0] -= 0.5/b4.mass;
+
         
         pworld.tick(0.01);
         box1.getTransformation()[12] = b1.position[0];

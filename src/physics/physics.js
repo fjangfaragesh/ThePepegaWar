@@ -6,6 +6,8 @@ Physics.World = class {
         this.shocker = function(id1,id2) {return id1 !== id2};
         this.globalTime = 0;
         
+        this.gravity = [0.0,-9.81,0.0];
+        
         this.phasePairs = undefined;
     }
     calcPhasePairs() {
@@ -29,8 +31,17 @@ Physics.World = class {
         console.log("TICK");
         let t = 0;
         let n = 0;
-        for (let b of this.bodys) b.prepareForNextTick();
         
+         for (let b of this.bodys) {
+            b.applyPulse([b.mass*this.gravity[0]*dt, b.mass*this.gravity[1]*dt, b.mass*this.gravity[2]*dt]);
+         }
+        
+        for (let hitPhasePair of this.phasePairs) {
+            hitPhasePair.elastic();
+            hitPhasePair.friction();// hier spielt die berechnungs reihenfolge ne rolle, aber vielleicht gehts ja trotzdem relativ gut...
+        }
+        
+        for (let b of this.bodys) b.prepareForNextTick();
         for (let hitPhasePair of this.phasePairs) {
             hitPhasePair.prepareForNextTick();
             hitPhasePair.calcTime(t);
@@ -74,122 +85,10 @@ Physics.World = class {
             b.position[2] += b.velocity[2]*(dt - b.timeOffset[2]);
         }
         this.globalTime += dt;
-        
-        
-        for (let hitPhasePair of this.phasePairs) {
-            hitPhasePair.elastic();
-            hitPhasePair.friction();
-        }
-        
-        
     }
     
 }
 
-/*
-Physics._magicTimeFormula = function(xA,vA,tOffsetA, xB,vB,tOffsetB, directionA, currentT,  DEBUG____ID) {
-//    console.log("debugId:" + DEBUG____ID,xA,vA,tOffsetA, xB,vB,tOffsetB, directionA, currentT);
-    if (vA == vB) return Infinity;// selbe geschwindigkeit: flächen werden NIE zusammen stoßen!
-    if ((vA - vB)*directionA < 0) return Infinity;// falsches vorzeichen: flächen sollen auch net stoßen
-    let xA0 = xA - vA*tOffsetA;
-    let xB0 = xB - vB*tOffsetB;
-    let t = (xB0 - xA0)/(vA - vB);
-  //  if (Math.abs(xB0 - xA0) < 0.0001) return currentT;
- //   if (t >= currentT) console.log("returns",t);
-    if (t >= currentT) return t;
-    if (Math.abs(t - currentT) < 0.0001) return currentT;
-  //  if ((t - currentT) > 0.0001) console.log("BLENG",t - currentT);
-    return Infinity;
-}
-
-
-Physics._checkShock = function(hitPhasePair) {
-    let t = hitPhasePair.time;
-    let hp1 = hitPhasePair.hitPhases[0];
-    let hp2 = hitPhasePair.hitPhases[1];
-    
-    let ax = hp1.normaleAxis;
-    let axU = (ax+1)%3;
-    let axV = (ax+2)%3;
-    
-    let b1 = hp1.body;
-    let b2 = hp2.body;
-    
-    let deltaU = b1.position[axU] + b1.velocity[axU]*(t-b1.timeOffset) - b2.position[axU] - b2.velocity[axU]*(t-b2.timeOffset);
-    if (Math.abs(deltaU) >= (hp1.size[0] + hp2.size[0])/2) return false; // kein Stoß, weil flächen aneinander vorbei fliegen
-    let deltaV = b1.position[axV] + b1.velocity[axV]*(t-b1.timeOffset) - b2.position[axV] - b2.velocity[axV]*(t-b2.timeOffset);
-    if (Math.abs(deltaV) >= (hp1.size[1] + hp2.size[1])/2) return false; // kein Stoß, weil flächen aneinander vorbei fliegen
-    return true;
-}
-
-Physics._shock = function(hitPhasePair) {
-    //TODO testen, ob flächen aneinander vorbei fliegen
-    
-    
-    let k = 0.3;//TODO
-    let my = 0.5;
-    
-
-    let t = hitPhasePair.time;
-    let hp1 = hitPhasePair.hitPhases[0];
-    let hp2 = hitPhasePair.hitPhases[1];
-    
-    let ax = hp1.normaleAxis;
-    let axU = (ax+1)%3;
-    let axV = (ax+2)%3;
-    
-    let b1 = hp1.body;
-    let b2 = hp2.body;
-
-
-    let v1 = b1.velocity[ax];
-    let v2 = b2.velocity[ax];
-    
-    let m1 = b1.mass;
-    let m2 = b2.mass;
-    
-    // https://www.lernhelfer.de/schuelerlexikon/physik-abitur/artikel/einteilung-von-stoessen
-    let v1new = (m1*v1 + m2*v2 - m2*(v1-v2)*k)/(m1+m2);
-    let v2new = (m1*v1 + m2*v2 - m1*(v2-v1)*k)/(m1+m2);
-
-    b1.position[0] += b1.velocity[0]*(t-b1.timeOffset);
-    b1.position[1] += b1.velocity[1]*(t-b1.timeOffset);
-    b1.position[2] += b1.velocity[2]*(t-b1.timeOffset);
-
-    b2.position[0] += b2.velocity[0]*(t-b2.timeOffset);
-    b2.position[1] += b2.velocity[1]*(t-b2.timeOffset);
-    b2.position[2] += b2.velocity[2]*(t-b2.timeOffset);    
-    
-    let v_u_rel = b2.velocity[axU] - b1.velocity[axU];
-    let v_v_rel = b2.velocity[axV] - b1.velocity[axV];
-    let v_rel = Math.sqrt(v_u_rel*v_u_rel + v_v_rel*v_v_rel);
-    let v_u_rel0 = 0;
-    let v_v_rel0 = 0;
-    let deltaV1_norm = Math.abs(v1new - v1);//betrag der geschwindigkeitsänderung auf der Stoßrichtung
-    let deltaV2_norm = Math.abs(v2new - v2);
-
-    if (v_rel > 0.0000000001) {
-        v_u_rel0 = v_u_rel/v_rel;
-        v_v_rel0 = v_v_rel/v_rel;
-    }
-    
-    let deltaV1 = Math.min(deltaV1_norm*my,v_rel);//betrag der geschwindigkeitsänderung duch reibung auf der zum Stoß senkrechten ebene
-    let deltaV2 = Math.min(deltaV2_norm*my,v_rel);//betrag der geschwindigkeitsänderung duch reibung auf der zum Stoß senkrechten ebene
-    
-    b1.velocity[ax] = v1new;
-    b1.velocity[axU] += deltaV1*v_u_rel0;
-    b1.velocity[axV] += deltaV1*v_v_rel0;
-
-    b2.velocity[ax] = v2new;
-    b2.velocity[axU] -= deltaV2*v_u_rel0;
-    b2.velocity[axV] -= deltaV2*v_v_rel0;
-    
-    b1.timeOffset = t;
-    b2.timeOffset = t;
-    
-//    console.log(b1,b2);
-}
-*/
 Physics.Body = class {
     constructor(id,position, velocity, mass, sink=false) {
         this.id = id;
@@ -203,8 +102,7 @@ Physics.Body = class {
         this.hitPhases = undefined;
         
         this.timeOffset = [0.0,0.0,0.0];
-        
-        
+                
         this.touching = {
             xP: [],// TouchingHitPhaseGraphEdges, die in positive x richtung anliegen
             xN: [],
@@ -469,9 +367,10 @@ Physics.PhasePair = class {
     
     elastic() {
         if (this.compressionPulse === 0.0) return;
-        //alert(this.compressionPulse);
-        let ax = this.phaseA.normaleAxis;
+
         let k = 0.5;//TODO
+        
+        let ax = this.phaseA.normaleAxis;
         let pA = [0,0,0];
         pA[ax] = -this.compressionPulse*k/2.0;
         this.phaseA.body.applyPulse(pA);
@@ -480,8 +379,45 @@ Physics.PhasePair = class {
         this.phaseB.body.applyPulse(pB);
     }
     friction() {
-        //TODO
+        if (this.compressionPulse === 0.0) return;
         
+        let my = 0.9;//TODO
+        
+        let ax = this.phaseA.normaleAxis;
+        let axU = (ax+1)%3;
+        let axV = (ax+2)%3;
+        
+        let b1 = this.phaseA.body;
+        let b2 = this.phaseB.body;
+        
+        let v_u_rel = b2.velocity[axU] - b1.velocity[axU];
+        let v_v_rel = b2.velocity[axV] - b1.velocity[axV];
+        let v_rel = Math.sqrt(v_u_rel*v_u_rel + v_v_rel*v_v_rel);
+        let v_u_rel0 = 0;
+        let v_v_rel0 = 0;
+        if (v_rel > 0.0000000001) {
+            v_u_rel0 = v_u_rel/v_rel;
+            v_v_rel0 = v_v_rel/v_rel;
+        }//sonst einheitsvektor bildung net so möglich, wenn extrem langsam, dann halt keine Reibung
+        let deltaV1_norm = this.compressionPulse/b1.mass;//betrag der geschwindigkeitsänderung auf der Stoßrichtung
+        let deltaV2_norm = this.compressionPulse/b2.mass;
+        
+        let deltaV1 = Math.min(deltaV1_norm*my,v_rel);//betrag der geschwindigkeitsänderung duch reibung auf der zum Stoß senkrechten ebene
+        let deltaV2 = Math.min(deltaV2_norm*my,v_rel);//betrag der geschwindigkeitsänderung duch reibung auf der zum Stoß senkrechten ebene
+        
+        let frPulse1 = [0,0,0];
+        let frPulse2 = [0,0,0];
+
+        frPulse1[axU] = deltaV1*v_u_rel0*b1.mass;
+        frPulse1[axV] = deltaV1*v_v_rel0*b1.mass;
+
+        frPulse2[axU] = -deltaV2*v_u_rel0*b2.mass;
+        frPulse2[axV] = -deltaV2*v_v_rel0*b2.mass;
+        
+        b1.applyPulse(frPulse1);
+        b2.applyPulse(frPulse2);
+        
+        debugger;
     }
     
     involvesBody(id) {
