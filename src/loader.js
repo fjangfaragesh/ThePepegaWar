@@ -13,6 +13,31 @@ Loader.loadImage = async function(src) {
         }
     });
 }
+Loader.loadAudio = async function(src) {
+    return new Promise(function (res,rejec) {
+        let ret = new Audio(src);
+        ret.oncanplaythrough = function() {
+            res(ret);
+        };
+        ret.onerror = function(e) {
+            rejec(e);
+        }
+    });
+}
+// https://gist.github.com/diem1/4fd37cf1542bb3ab880e
+Loader.loadAudioBuffer = async function(src, actx) {
+    let request = new XMLHttpRequest();
+    return new Promise(function (res,rejec) {
+        request.open("GET",src, true);
+        request.responseType = "arraybuffer";
+        request.onload = function(){
+            actx.decodeAudioData(request.response, res);
+        }
+        request.send();
+    });
+}
+
+
 Loader.loadText = async function(path) {
     let req = new XMLHttpRequest();
     req.open("GET", path, true);
@@ -157,3 +182,14 @@ Loader.LdResourceText = class extends Loader.LdResource {
     }
 }
 Loader.LdResourceText.DEFAULT_TYPE = "Text";
+
+Loader.LdResourceAudioBuffer = class extends Loader.LdResource {
+    constructor(src, audioContextResId,  type) {
+        super([audioContextResId],type ?? Loader.LdResourceAudioBuffer.DEFAULT_TYPE)
+        this.src = src;
+    }
+    async loadFunction(depVal) {
+        return await Loader.loadAudioBuffer(this.src,depVal.actx);
+    }
+}
+Loader.LdResourceAudioBuffer.DEFAULT_TYPE = "AudioBuffer";

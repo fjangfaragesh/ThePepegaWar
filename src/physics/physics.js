@@ -8,12 +8,15 @@ Physics.World = class {
         this.coefficientsManager = coefficientsManager ?? new Physics.DefaultCoefficientsManager(); // dieses Ding wird nach elastizitätskoeffizient und gleitreibungskoeffizient zweier flächen gefragt
         
         this.globalTime = 0;
+        this.ticks = 0;
         
         this.gravity = [0.0,-9.81,0.0];
         
         this.phasePairs = undefined;
     }
     calcPhasePairs() {
+        if (this.phasePairs !== undefined) for (let hitPhasePair of this.phasePairs) hitPhasePair.unTouch();
+    
         this.phasePairs = [];
         for (let ib1 = 0; ib1 < this.bodys.length; ib1++) for (let ib2 = 0; ib2 < ib1; ib2++) {
             let b1 = this.bodys[ib1];
@@ -36,20 +39,13 @@ Physics.World = class {
         let t = 0;
         let n = 0;
         
-         for (let b of this.bodys) {
-            b.applyPulse([b.mass*this.gravity[0]*dt, b.mass*this.gravity[1]*dt, b.mass*this.gravity[2]*dt]);
-         }
-        
-        for (let hitPhasePair of this.phasePairs) {
-            hitPhasePair.elastic(this.coefficientsManager);
-            hitPhasePair.friction(this.coefficientsManager);// hier spielt die berechnungs reihenfolge ne rolle, aber vielleicht gehts ja trotzdem relativ gut...
-        }
         
         for (let b of this.bodys) b.prepareForNextTick();
-        for (let hitPhasePair of this.phasePairs) {
-            hitPhasePair.prepareForNextTick();
-            hitPhasePair.calcTime(t);
-        }
+        
+        for (let hitPhasePair of this.phasePairs) hitPhasePair.prepareForNextTick();
+        
+        for (let hitPhasePair of this.phasePairs) hitPhasePair.calcTime(t);
+        
         while (true) {
             //alert();
             
@@ -88,6 +84,18 @@ Physics.World = class {
             b.position[2] += b.velocity[2]*(dt - b.timeOffset[2]);
         }
         this.globalTime += dt;
+        
+        
+        for (let b of this.bodys) {
+            b.applyPulse([b.mass*this.gravity[0]*dt, b.mass*this.gravity[1]*dt, b.mass*this.gravity[2]*dt]);
+        }
+        
+        for (let hitPhasePair of this.phasePairs) {
+            hitPhasePair.elastic(this.coefficientsManager);
+            hitPhasePair.friction(this.coefficientsManager);// hier spielt die berechnungs reihenfolge ne rolle, aber vielleicht gehts ja trotzdem relativ gut...
+        }
+        this.ticks++;
+        
     }
     
 }
@@ -260,6 +268,12 @@ Physics.PhasePair = class {
     
     //führt den Stoß duch (voher sollte noch checkShock() ausgeführt werden)
     shock(currentTime, changedBodyIds) {
+        
+        // nur zum debuggen
+//        let idA = this.phaseA.id;
+//        let idB = this.phaseB.id;
+        
+        
         let current = this;
         let ax = this.phaseA.normaleAxis;
         
@@ -288,17 +302,24 @@ Physics.PhasePair = class {
         },this);
         
         // berechnen der Endgeschwindigkeit des Verbandes
-        let v;
+        let v;// neue geschwindigkeit
 
-        v = (mA*this.phaseA.body.velocity[ax] + mB*this.phaseB.body.velocity[ax])/(mA + mB);
+        let vA = this.phaseA.body.velocity[ax];// alte geschwindigkeit
+        let vB = this.phaseB.body.velocity[ax];// alte geschwindigkeit
+        
+        v = (mA*vA + mB*vB)/(mA + mB);
         
         // falls es eine sink gibt, wird die geschwindigkeit des Gesammtverbands mit der von dieser überschrieben, es wird aber vorher trotzdem mit v gerechnet
         let vFinal = v;
         if (sink !== undefined) vFinal = sink.sinkVelocity[ax];
         
-        let deltaV = this.phaseB.body.velocity[ax] - this.phaseA.body.velocity[ax];
-        let deltaVA = v - this.phaseA.body.velocity[ax];
-        let deltaVB = v - this.phaseB.body.velocity[ax];
+
+        
+        
+        let deltaV = vB - vA;// geschwindigkeitsunterschied (alt) der beiden körper
+        
+        let deltaVA = v - vA;// geschwindigkeitsänderung von körper A
+        let deltaVB = v - vB;// geschwindigkeitsänderung von körper B
         
         // sich selbst zum Verband hinzu fügen TODO außer, wenn das schon irgendwie anders drin ist, zyklen erkennen
         this.touch();
@@ -340,10 +361,11 @@ Physics.PhasePair = class {
         },this);
         
         
-        
+ //       debugger;
     }
     
     touch() {
+//        debugger;
         if (this.isTouching) return;
  //       console.log(this.phaseA.body.id + " and " + this.phaseB.body.id + " now touching!");
         this.isTouching = true;
@@ -351,6 +373,7 @@ Physics.PhasePair = class {
         this.phaseB.body.getTouchings(this.phaseB.normaleAxis, Physics.HitPhase.DIRECTION.NEGATIVE).push(new Physics.TouchingHitPhaseGraphEdge(this.phaseA.body,this));
     }
     unTouch() {
+//        debugger;
         if (!this.isTouching) return;
 //        console.log(this.phaseA.body.id + " and " + this.phaseB.body.id + " now not touching!");
         this.isTouching = false;
@@ -387,7 +410,6 @@ Physics.PhasePair = class {
     }
     friction(coefficientsManager) {
         if (this.compressionPulse === 0.0) return;
-        
         let my = coefficientsManager.getMy(this.phaseA.body.id, this.phaseB.body.id, this.phaseA.id, this.phaseB.id);
         
         let ax = this.phaseA.normaleAxis;

@@ -29,6 +29,38 @@ let canvLockState = false;
 
 console.log("Index.js is running...");
 onload = async function() {
+    glcanv = document.getElementById("canv");
+    let gl = threeDGraphics.initGL(glcanv);
+    let actx = new AudioContext();
+    
+    let game = new Game.Game(gl,actx);
+    await game.loadResources({"gl":new Loader.LdResourceLoadFunction([] ,async function() {return gl},"GL")});
+    await game.loadResources({"actx":new Loader.LdResourceLoadFunction([] ,async function() {return actx},"ACTX")});
+
+    await game.loadResources(RESOURCES);
+    
+    let level = new TestLevel();
+    game.changeLevel(level);
+    
+    function loop() {
+        glcanv.width = window.innerWidth;
+        glcanv.height = window.innerHeight;
+        gl.viewport(0,0,window.innerWidth, window.innerHeight)
+        game.level.camera.setWidthHightRatio(window.innerWidth/window.innerHeight);// scheiß code
+        
+        game.tick();
+        game.draw();
+    }
+    setInterval(loop, 10);
+    //onloadOld();
+}
+async function onloadOld() {
+    let actx = new AudioContext();
+    let b = await Loader.loadAudioBuffer("../assets/audio/music/A.mp3",actx);
+    let aplayer = new ThreeDAudio.Player(actx,["background-music","lalala"]);
+    let music = new ThreeDAudio.PlayingSound(b, undefined, [999,999,999],[0,0,0], 3.0, true, 0.0);
+    aplayer.addSound(music,"background-music");
+    
     let userInputStatesManager = new UserInput.StatesManager();
     
     
@@ -37,28 +69,28 @@ onload = async function() {
     let world = new threeDGraphics.World(gl);
     
     let loader = new Loader.ResouceLoader();
+    loader.add(Loader.LdResourceLoadFunction([], async function() {return gl}, "GL"),"gl");
+    loader.add(Loader.LdResourceLoadFunction([], async function() {return actx}, "ACTX"),"actx");
     loader.add(new Loader.LdResourceText("../assets/models/basic_shapes/cube_same_texture.obj"),"file:cube_same_texture.obj");
     loader.add(new Loader.LdResourceText("../assets/models/items/coin.obj"),"file:coin.obj");
     loader.add(new Loader.LdResourceText("../assets/models/creatures/scary_ghost.obj"),"file:scary_ghost.obj");
     loader.add(new Loader.LdResourceText("../assets/models/boxes/superbox_blue.obj"),"file:superbox_blue.obj");
+    loader.add(new Loader.LdResourceText("../assets/models/boxes/bricks.obj"),"file:bricks.obj");
     loader.add(new Loader.LdResourceImage("../assets/textures/palettes/hsl.png"),"image:hsl");
+    loader.add(new Loader.LdResourceImage("../assets/textures/palettes/hsl_desaturated.png"),"image:hsl_desaturated");
     loader.add(new Loader.LdResourceImage("../assets/textures/palettes/imphenzia.png"),"image:imphenzia");
     loader.add(new Loader.LdResourceImage("../assets/textures/test.png"),"image:test");
     loader.add(new Loader.LdResourceImage("../assets/textures/wuhu.png"),"image:whuh");
-    
-    loader.add(new TexturedTrianglesResourceLoader("file:superbox_blue.obj","image:imphenzia"), "3dRes:superbox");
-    loader.add(new TexturedTrianglesResourceLoader("file:coin.obj","image:hsl"), "3dRes:coin");
-    loader.add(new TexturedTrianglesResourceLoader("file:cube_same_texture.obj","image:test"), "3dRes:test");
-    loader.add(new TexturedTrianglesResourceLoader("file:scary_ghost.obj","image:whuh"), "3dRes:whuh");
+
+    loader.add(new TexturedTrianglesResourceLoader("file:superbox_blue.obj","image:imphenzia","gl"), "3dRes:superbox");
+    loader.add(new TexturedTrianglesResourceLoader("file:bricks.obj","image:hsl_desaturated","gl"), "3dRes:bricks");
+    loader.add(new TexturedTrianglesResourceLoader("file:coin.obj","image:hsl","gl"), "3dRes:coin");
+    loader.add(new TexturedTrianglesResourceLoader("file:cube_same_texture.obj","image:test","gl"), "3dRes:test");
+    loader.add(new TexturedTrianglesResourceLoader("file:scary_ghost.obj","image:whuh","gl"), "3dRes:whuh");
 
     
     await loader.loadAll();
-    
-    
-    await loader.getValue("3dRes:superbox").init(gl);
-    await loader.getValue("3dRes:test").init(gl);
-    await loader.getValue("3dRes:coin").init(gl);
-    await loader.getValue("3dRes:whuh").init(gl);
+    console.log("hau");
     /*
     let wuhu = new threeDGraphics.SimpleStructure(
             loader.getValue("3dRes:whuh"), 
@@ -86,7 +118,7 @@ onload = async function() {
 
     let box1 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:superbox"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
     let box2 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
-    let box3 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:superbox"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
+    let box3 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:bricks"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
     let box4 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:superbox"), new Float32Array([0.25,0,0,0, 0,4,0,0, 0,0,3,0, 0,0,0,1]));
     let bdrdbx = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([20,0,0,0, 0,1,0,0, 0,0,20,0, 0,-5.5,0,1]));
     world.addStructure(box1);
@@ -142,6 +174,13 @@ onload = async function() {
 
         
         pworld.tick(0.01);
+        music.setPosition([b1.position[0],b1.position[1],b1.position[2]]);
+        music.setVelocity([b1.velocity[0],b1.velocity[1],b1.velocity[2]]);
+        
+        aplayer.ears.setPosition([cam.pos[0],cam.pos[1],cam.pos[2]]);
+        aplayer.ears.setRightEarAxis([Math.cos(cam.ang1),0,Math.sin(cam.ang1)]);
+        aplayer.tick();
+        
         box1.getTransformation()[12] = b1.position[0];
         box1.getTransformation()[13] = b1.position[1];
         box1.getTransformation()[14] = b1.position[2];
@@ -302,19 +341,30 @@ function checkIfCanvasIsLocked(canvas) {
 
 // kommt noch wo anders hin...
 class TexturedTrianglesResourceLoader extends Loader.LdResource {
-    constructor(idObjFile,idImg) {
-        super([idObjFile,idImg],"3dRes")
+    constructor(idObjFile,idImg,idGl) {
+        super([idObjFile,idImg,idGl],"3dRes")
         this.idObjFile = idObjFile;
         this.idImg = idImg;
+        this.idGl = idGl;
     }
     async loadFunction(dep) {
-        return new threeDGraphics.TexturedTrianglesResource(
+        let ret = new threeDGraphics.TexturedTrianglesResource(
             ObjLoader.loadObjFromString(dep[this.idObjFile]).generateTriangles(),
             dep[this.idImg]
         );
+        ret.init(dep[this.idGl]);
+        return ret;
     }
 }
-
+class GlRes extends Loader.LdResource {
+    constructor(gl) {
+        super([]);
+        this.gl = gl;
+    }
+    async loadFunction(dep) {
+        return this.gl;
+    }
+}
 
 
 class LoveCube extends Physics.Body {
@@ -346,3 +396,20 @@ class BorderCube extends Physics.Body {
         ]);
     }
 }
+
+const RESOURCES = {
+    "file:cube_same_texture.obj":   new Loader.LdResourceText("../assets/models/basic_shapes/cube_same_texture.obj"),
+    "file:coin.obj":                new Loader.LdResourceText("../assets/models/items/coin.obj"),
+    "file:superbox_blue.obj":       new Loader.LdResourceText("../assets/models/boxes/superbox_blue.obj"),
+    "file:bricks.obj":              new Loader.LdResourceText("../assets/models/boxes/bricks.obj"),
+    "image:hsl":                    new Loader.LdResourceImage("../assets/textures/palettes/hsl.png"),
+    "image:hsl_desaturated":        new Loader.LdResourceImage("../assets/textures/palettes/hsl_desaturated.png"),
+    "image:imphenzia":              new Loader.LdResourceImage("../assets/textures/palettes/imphenzia.png"),
+    "image:test":                   new Loader.LdResourceImage("../assets/textures/test.png"),
+    "3dRes:superbox":               new TexturedTrianglesResourceLoader("file:superbox_blue.obj","image:imphenzia","gl"),
+    "3dRes:bricks":                 new TexturedTrianglesResourceLoader("file:bricks.obj","image:hsl_desaturated","gl"),
+    "3dRes:coin":                   new TexturedTrianglesResourceLoader("file:coin.obj","image:hsl","gl"),
+    "3dRes:test":                   new TexturedTrianglesResourceLoader("file:cube_same_texture.obj","image:test","gl"),
+    "sound:hallo":                  new Loader.LdResourceAudioBuffer("../assets/audio/music/A.mp3","actx")
+};
+

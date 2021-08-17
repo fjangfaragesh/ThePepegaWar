@@ -247,4 +247,11 @@ threeDGraphics.SimpleStructure = class {
     getSubStructures() {return [] }
     getRecources() {return [this.res] }
     getTransformation() {return this.trans}
+    
+    setTransformation(trans) {
+        this.trans = trans;
+    }
+    setResource(res) {
+        this.res = res;
+    }
 } 
