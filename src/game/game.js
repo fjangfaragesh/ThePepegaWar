@@ -44,7 +44,6 @@ Game.Game = class {
     changeLevel(lvl) {
         if (this.level !== undefined) this.level.leave();
         this.level = lvl;
-        if (!this.level.isInitialized()) this.level.init(this);
         this.level.join();
     }
     tick() {
@@ -52,6 +51,7 @@ Game.Game = class {
         
     }
     draw() {
+        this.threeDWorld.setGlobalConfiguration("time",(Date.now() / 1000.0)%3600.0);
         if (this.level !== undefined) this.level.draw();
         this.threeDWorld.draw();
         this.threeDAudioPlayer.tick();

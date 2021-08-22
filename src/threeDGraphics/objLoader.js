@@ -70,6 +70,27 @@ ObjLoader.Object = class {
         }
         return ret;
     }
+    generateTrianglesFromMaterial(materialName) {
+        let ret = [];
+        for (let t of this.triangles) {
+            if (t.material != materialName) continue;
+            let v1 = this.getV(t.p1);
+            let v2 = this.getV(t.p2);
+            let v3 = this.getV(t.p3);
+            let n1 = this.getVN(t.n1);
+            let n2 = this.getVN(t.n2);
+            let n3 = this.getVN(t.n3);
+            let t1 = this.getVT(t.t1);
+            let t2 = this.getVT(t.t2);
+            let t3 = this.getVT(t.t3);
+            ret.push(
+                {"p1":{"x":v1.x,"y":v1.y,"z":v1.z,"nx":n1.x,"ny":n1.y,"nz":n1.z,"tx":t1.x,"ty":t1.y},
+                 "p2":{"x":v2.x,"y":v2.y,"z":v2.z,"nx":n2.x,"ny":n2.y,"nz":n2.z,"tx":t2.x,"ty":t2.y},
+                 "p3":{"x":v3.x,"y":v3.y,"z":v3.z,"nx":n3.x,"ny":n3.y,"nz":n3.z,"tx":t3.x,"ty":t3.y}
+                });
+        }
+        return ret;
+    }
 }
 
 ObjLoader.Point = class {
@@ -143,6 +164,9 @@ ObjLoader.loadObjFromString = function(objStr) {
             case "mtllib":
                 ret.materialLibs.push(wds[1]);
                 break;
+            case "usemtl":
+                currentMat = wds[1];
+                break;
             case "v":
                 ret.points.push(new ObjLoader.Point(pId++,wds[1]*1,wds[2]*1,wds[3]*1, Math.random()/3,Math.random()/3,Math.random()/3));
                 break;
@@ -177,7 +201,7 @@ ObjLoader._parseTriangle = function(wds,fId,currentMat,currentGroup) {
                 p1d.vertex,p2d.vertex,p3d.vertex, 
                 p1d.normale,p2d.normale,p3d.normale, 
                 p1d.texture,p2d.texture,p3d.texture,
-                currentMat,currentGroup);   
+                undefined /* TODO  */,currentMat,currentGroup);   
 }
 ObjLoader._parseTriangleVtx = function(pwds) {
         if (pwds.length == 3) return {"vertex":pwds[0], "texture":pwds[1] == "" ? undefined : pwds[1], "normale":pwds[2]};

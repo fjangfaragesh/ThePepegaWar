@@ -39,7 +39,8 @@ onload = async function() {
 
     await game.loadResources(RESOURCES);
     
-    let level = new TestLevel();
+    let level = new GreenWorldLevel(game, undefined);
+    //let level = new TestLevel();
     game.changeLevel(level);
     
     function loop() {
@@ -76,6 +77,7 @@ async function onloadOld() {
     loader.add(new Loader.LdResourceText("../assets/models/creatures/scary_ghost.obj"),"file:scary_ghost.obj");
     loader.add(new Loader.LdResourceText("../assets/models/boxes/superbox_blue.obj"),"file:superbox_blue.obj");
     loader.add(new Loader.LdResourceText("../assets/models/boxes/bricks.obj"),"file:bricks.obj");
+    
     loader.add(new Loader.LdResourceImage("../assets/textures/palettes/hsl.png"),"image:hsl");
     loader.add(new Loader.LdResourceImage("../assets/textures/palettes/hsl_desaturated.png"),"image:hsl_desaturated");
     loader.add(new Loader.LdResourceImage("../assets/textures/palettes/imphenzia.png"),"image:imphenzia");
@@ -352,10 +354,67 @@ class TexturedTrianglesResourceLoader extends Loader.LdResource {
             ObjLoader.loadObjFromString(dep[this.idObjFile]).generateTriangles(),
             dep[this.idImg]
         );
-        ret.init(dep[this.idGl]);
+        await ret.init(dep[this.idGl]);
         return ret;
     }
 }
+
+// kommt noch wo anders hin...
+class ShaderTrianglesResourceLoader extends Loader.LdResource {
+    constructor(idObjFile,idProgram,idGl) {
+        super([idObjFile,idProgram,idGl],"3dRes")
+        this.idObjFile = idObjFile;
+        this.idProgram = idProgram;
+        this.idGl = idGl;
+    }
+    async loadFunction(dep) {
+        let ret = new threeDGraphics.ShaderTrianglesResource(ObjLoader.loadObjFromString(dep[this.idObjFile]).generateTriangles(),dep[this.idProgram]);
+        await ret.init(dep[this.idGl]);
+        return ret;
+    }
+}
+class ShadersTrianglesResourceLoader extends Loader.LdResource {
+    constructor(idObjFile,programsId,idGl) {
+        let dep = [idObjFile,idGl];
+        let kys = Object.keys(programsId);
+        for (let k of kys) dep.push(programsId[k]);
+        super(dep);
+        this.kys = kys;
+        this.idObjFile = idObjFile;
+        this.programsId = programsId;
+        this.idGl = idGl;
+    }
+    async loadFunction(dep) {
+        let shaderTrianglesResources = [];
+        let o = ObjLoader.loadObjFromString(dep[this.idObjFile]);
+        for (let k of this.kys) {
+            let p = dep[this.programsId[k]];
+            let r = new threeDGraphics.ShaderTrianglesResource(o.generateTrianglesFromMaterial(k),p);
+            if (r.length !== 0) shaderTrianglesResources.push(r);
+        }
+        let ret = new threeDGraphics.ShadersTrianglesResource(shaderTrianglesResources);
+        await ret.init(dep[this.idGl]);
+        return ret;
+    }
+    
+    
+}
+
+
+class ShaderProgramResourceLoader extends Loader.LdResource {
+    constructor(idvshadercode, idfshadercode, idgl) {
+        super([idvshadercode, idfshadercode, idgl],"shaderProgram");
+        this.idvshadercode = idvshadercode;
+        this.idfshadercode = idfshadercode;
+        this.idgl = idgl;
+        
+    }
+    async loadFunction(dep) {
+        return threeDGraphics.createProgram(dep[this.idgl],dep[this.idvshadercode],dep[this.idfshadercode]);
+    }
+}
+
+
 class GlRes extends Loader.LdResource {
     constructor(gl) {
         super([]);
@@ -396,20 +455,65 @@ class BorderCube extends Physics.Body {
         ]);
     }
 }
+const SHADER_MATERIAL_IDS = {
+    "sand":"shader:sand",
+    "water":"shader:water",
+    "stone":"shader:stone",
+    "grass":"shader:grass",
+    "leaves":"shader:leaves",
+    "bark":"shader:magic",
+    "wood":"shader:magic",
+    "magic":"shader:magic"
+};
 
 const RESOURCES = {
     "file:cube_same_texture.obj":   new Loader.LdResourceText("../assets/models/basic_shapes/cube_same_texture.obj"),
     "file:coin.obj":                new Loader.LdResourceText("../assets/models/items/coin.obj"),
     "file:superbox_blue.obj":       new Loader.LdResourceText("../assets/models/boxes/superbox_blue.obj"),
     "file:bricks.obj":              new Loader.LdResourceText("../assets/models/boxes/bricks.obj"),
+    "file:player.obj":              new Loader.LdResourceText("../assets/models/creatures/player.obj"),
+    "file:worldnode.obj":           new Loader.LdResourceText("../assets/models/world/worldnode.obj"),
+    "file:greenworld.obj":          new Loader.LdResourceText("../assets/models/world/greenworld/greenworld.obj"),
+    
+    "file:1x1box.phases.txt":       new Loader.LdResourceText("../assets/models/boxes/1x1box.phases.txt"),
+
+    
+    "file:stone.v.glsl":            new Loader.LdResourceText("../assets/shader/stone/stone.v.glsl"),
+    "file:stone.f.glsl":            new Loader.LdResourceText("../assets/shader/stone/stone.f.glsl"),
+    "shader:stone":                 new ShaderProgramResourceLoader("file:stone.v.glsl","file:stone.f.glsl","gl"),
+    
+    "file:sand.v.glsl":             new Loader.LdResourceText("../assets/shader/sand/sand.v.glsl"),
+    "file:sand.f.glsl":             new Loader.LdResourceText("../assets/shader/sand/sand.f.glsl"),
+    "shader:sand":                  new ShaderProgramResourceLoader("file:sand.v.glsl","file:sand.f.glsl","gl"),
+    
+    "file:water.v.glsl":            new Loader.LdResourceText("../assets/shader/water/water.v.glsl"),
+    "file:water.f.glsl":            new Loader.LdResourceText("../assets/shader/water/water.f.glsl"),
+    "shader:water":                 new ShaderProgramResourceLoader("file:water.v.glsl","file:water.f.glsl","gl"),
+    
+    "file:magic.v.glsl":            new Loader.LdResourceText("../assets/shader/magic/magic.v.glsl"),
+    "file:magic.f.glsl":            new Loader.LdResourceText("../assets/shader/magic/magic.f.glsl"),
+    "shader:magic":                 new ShaderProgramResourceLoader("file:magic.v.glsl","file:magic.f.glsl","gl"),
+
+    "file:grass.v.glsl":            new Loader.LdResourceText("../assets/shader/grass/grass.v.glsl"),
+    "file:grass.f.glsl":            new Loader.LdResourceText("../assets/shader/grass/grass.f.glsl"),
+    "shader:grass":                 new ShaderProgramResourceLoader("file:grass.v.glsl","file:grass.f.glsl","gl"),
+    
+    "file:leaves.v.glsl":            new Loader.LdResourceText("../assets/shader/leaves/leaves.v.glsl"),
+    "file:leaves.f.glsl":            new Loader.LdResourceText("../assets/shader/leaves/leaves.f.glsl"),
+    "shader:leaves":                 new ShaderProgramResourceLoader("file:leaves.v.glsl","file:leaves.f.glsl","gl"),
+    
     "image:hsl":                    new Loader.LdResourceImage("../assets/textures/palettes/hsl.png"),
     "image:hsl_desaturated":        new Loader.LdResourceImage("../assets/textures/palettes/hsl_desaturated.png"),
     "image:imphenzia":              new Loader.LdResourceImage("../assets/textures/palettes/imphenzia.png"),
     "image:test":                   new Loader.LdResourceImage("../assets/textures/test.png"),
     "3dRes:superbox":               new TexturedTrianglesResourceLoader("file:superbox_blue.obj","image:imphenzia","gl"),
     "3dRes:bricks":                 new TexturedTrianglesResourceLoader("file:bricks.obj","image:hsl_desaturated","gl"),
+    "3dRes:player":                 new TexturedTrianglesResourceLoader("file:player.obj","image:hsl","gl"),
     "3dRes:coin":                   new TexturedTrianglesResourceLoader("file:coin.obj","image:hsl","gl"),
     "3dRes:test":                   new TexturedTrianglesResourceLoader("file:cube_same_texture.obj","image:test","gl"),
+    "3dRes:worldnode":              new ShadersTrianglesResourceLoader("file:worldnode.obj",SHADER_MATERIAL_IDS,"gl"),
+    "3dRes:greenworld":             new ShadersTrianglesResourceLoader("file:greenworld.obj",SHADER_MATERIAL_IDS,"gl"),
+    
     "sound:hallo":                  new Loader.LdResourceAudioBuffer("../assets/audio/music/A.mp3","actx")
 };
 

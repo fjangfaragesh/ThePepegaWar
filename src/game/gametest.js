@@ -1,3 +1,102 @@
+/*
+class GreenWorldLevel {
+    constructor(game) {
+        this.game = undefined;
+        this.msgQue = [];
+        
+        this.game = game;
+        
+        this.worldStruc = new threeDGraphics.SimpleStructure(this.game.resourceLoader.getValue("3dRes:greenworld"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
+        
+        this.camera = new TestCamera();
+        this.ears = new ThreeDAudio.Ears([0,0,0], [0,0,0], [1,0,0]);
+        
+    }
+    join() {
+        this.game.send(new Game.ThreeDGMessageClear());
+        this.game.send(new Game.ThreeDGMessageAddStructure(this.worldStruc));
+        this.game.send(new Game.ThreeDGMessageSetCamera(this.camera.updateMatrix()));
+    }
+    leave() {
+        this.game.send(new Game.ThreeDGMessageClear());
+    }
+    close() {
+        
+    }
+    tick() {
+        this.controlProvisorisch2();
+        
+        let queOld = this.msgQue;
+        this.msgQue = [];
+        for (let m of queOld) this.send2(m);
+    }
+    draw() {
+        this.game.send(new Game.ThreeDGMessageSetCamera(this.camera.updateMatrix()));
+        this.ears.setPosition([this.camera.pos[0],this.camera.pos[1],this.camera.pos[2]]);
+        this.ears.setRightEarAxis([Math.cos(this.camera.ang1),0,-Math.sin(this.camera.ang1)]);
+        this.game.send(new Game.ThreeDSMessageSetEars(this.ears));
+    }
+    
+    send(levelMessage) {
+        this.msgQue.push(levelMessage);
+    }
+    
+    send2(levelMessage) {
+        switch (levelMessage.type) {
+            case "userinput":
+                this.controlProvisorisch(levelMessage);
+                break;
+            case "userinterfaceinteraction":
+                
+                break;
+            case "playercontrol":
+                
+                break;
+        }
+    }
+    controlProvisorisch(levelMessage) {
+        if (levelMessage.source === "mouse") {
+            if (levelMessage.action === "move") {
+                this.camera.ctrlRot1(-RM_SPEED*levelMessage.deltaX*(this.game.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
+                this.camera.ctrlRot2(-RM_SPEED*levelMessage.deltaY*(this.game.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
+            }
+        }
+    }
+    controlProvisorisch2() {
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_FWD)) this.camera.ctrlMove(0,0,-SPEED);
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_LEFT)) this.camera.ctrlMove(-SPEED,0,0);
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_BKWD)) this.camera.ctrlMove(0,0,SPEED);
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_RIGHT)) this.camera.ctrlMove(SPEED,0,0);
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_UP)) this.camera.ctrlMove(0,SPEED,0);
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_DOWN)) this.camera.ctrlMove(0,-SPEED,0);
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_R_UP)) this.camera.ctrlRot2(-R_SPEED);
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_R_LEFT)) this.camera.ctrlRot1(-R_SPEED);
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_R_DOWN)) this.camera.ctrlRot2(R_SPEED);
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_R_RIGHT)) this.camera.ctrlRot1(R_SPEED);
+        this.camera.setFieldOfView((this.game.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 5/180*Math.PI : 60/180*Math.PI));
+    }
+}
+
+
+class WorldLevelPoint {
+    constructor(x,y,z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.nextLeft = undefined;
+        this.nextRight = undefined;
+        this.nextFront = undefined;
+        this.nextBack = undefined;
+    }
+}
+
+*/
+
+
+
+
+
+
 // kommt wieder in den Restmülleimer:
 
 class TestLevel {
@@ -15,12 +114,12 @@ class TestLevel {
         this.gameObjects = [];
         this.player = new TestPlayer("player",this.game,this, 0,0,0);
         this.gameObjects.push(this.player);
-        
-        window.PLAYER = this.player;
-        
+                
         this.gameObjects.push(new TestBoden("boden",this.game,this, 0,-2,0));
         this.gameObjects.push(new TestPlayer("a",this.game,this, 0.1,3,0));
         this.gameObjects.push(new TestPlayer("b",this.game,this, -0.1,4.5,0));
+        this.gameObjects.push(new TestBricksBlock("c", this.game, this, 2.0, 1.0, 1.0));
+        
         this.camera = new TestCamera();
         this.ears = new ThreeDAudio.Ears([0,0,0], [0,0,0], [1,0,0]);
     }
@@ -221,8 +320,7 @@ class TestBoden extends TestGameObject {
     constructor(id,game,level, x,y,z) {
         super(id,game,level);
         
-        this.pbody = new BoxBody(id, [x,y,z], [0,0,0], 99999999, [10,1,10] , true);
-        
+        this.pbody = new BoxBody(id, [x,y,z], [0,0,0], 99999999, [10,1,10] , true);        
         this.level.pworld.bodys.push(this.pbody);//naja
         
         
@@ -263,7 +361,31 @@ class TestBoden extends TestGameObject {
     }
 }
 
+class TestBricksBlock extends TestGameObject {
+    constructor(id,game,level, x,y,z) {
+        super(id,game,level);
+        this.pbody = new Physics.Body(id, [x,y,z], [0,0,0], 99999999, true);
+        this.pbody.setHitPhases(parsePhases(game.resourceLoader.getValue("file:1x1box.phases.txt"), this.pbody));
+        
+        
+        this.level.pworld.bodys.push(this.pbody);//naja
+        
+        this.structure = new threeDGraphics.SimpleStructure(game.resourceLoader.getValue("3dRes:bricks"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]));
+        
+    }
+    send(levelMessage) {
 
+    }
+    activate() {
+        this.game.send(new Game.ThreeDGMessageAddStructure(this.structure));
+    }
+    deactivate() {
+        this.game.send(new Game.ThreeDGMessageRemoveStructure(this.structure));
+    }
+    refresh() {
+        // nichts tun, die Position wird sich NIE ändern
+    }
+}
 
 
 
@@ -367,14 +489,36 @@ class BorderBoxBody extends Physics.Body {
 // line:      "subid x y z ND u v"    example: "left -0.5 0.0 0.0 X+ 1.0 1.0"
 // N: Normale Axis (X / Y / Z)   D: Direction (+ / -)
 function parsePhase(line, body) {
-    let wds = line.split(" ");
-    return new Physics.HitPhase(
-        body.id + ":" + wds[0],
-        body,
-        [wds[1]*1,wds[2]*1,wds[3]*1],
-        Physics.HitPhase.AXIS[wds[4][0]],parsePhaseDir[wds[4][0]],[wds[5]*1,wds[6]*1])
+    let wds = line.replace(/\s{2,}/g, ' ').split(" ");
+    
+    let id = body.id + ":" + wds[0];
+    let x = wds[1]*1;
+    let y = wds[2]*1;
+    let z = wds[3]*1
+    let ax = Physics.HitPhase.AXIS[wds[4][0]];
+    let dir = parsePhaseDir[wds[4][1]];
+    let u = wds[5]*1;
+    let v = wds[6]*1;
+    if (isNaN(x)) throw new Error("can't parse " + line + " " + wds[1] + " is not a number");
+    if (isNaN(y)) throw new Error("can't parse " + line + " " + wds[2] + " is not a number");
+    if (isNaN(z)) throw new Error("can't parse " + line + " " + wds[3] + " is not a number");
+    if (ax === undefined) throw new Error("can't parse " + line + " " + wds[4][0] + " is not a axis");
+    if (dir === undefined) throw new Error("can't parse " + line + " " + wds[4][1] + " is not a direction");
+    if (isNaN(u)) throw new Error("can't parse " + line + " " + wds[5] + " is not a number");
+    if (isNaN(v)) throw new Error("can't parse " + line + " " + wds[6] + " is not a number");
+    return new Physics.HitPhase(id,body,[x,y,z],ax,dir,[u,v]);
 }
 const parsePhaseDir = {"+": Physics.HitPhase.DIRECTION.POSITIVE,"-":Physics.HitPhase.DIRECTION.NEGATIVE};
+
+
+function parsePhases(str, body) {
+    let ret = [];
+    let lines = str.replace(/[\r\n]{2,}/g, "\n").split("\n");
+    for (let l of lines) {
+        if (l !== "") ret.push(parsePhase(l,body));
+    }
+    return ret;
+}
 
 function threeDGPosUpdate(pos, positionMatrix, baseMatrix) {
     glMatrix.mat4.copy(positionMatrix, baseMatrix);

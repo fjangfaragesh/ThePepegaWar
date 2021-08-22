@@ -105,6 +105,7 @@ Loader.ResouceLoader = class {
             }
         }
         this.waitingPromiseResRejFunctions[id] = undefined;
+        console.log("loaded " + id);
     }
     
     async loadAll() {
@@ -113,6 +114,7 @@ Loader.ResouceLoader = class {
             setTimeout(async ()=>this.load(k),0);
         }
         for (let k of kys) await this.waitFor(k);
+        console.log("all loaded");
     }
 }
 
@@ -144,6 +146,7 @@ Loader.LdResource = class {
         } catch (e) {
             this.value = e;
             this.state = Loader.STATES.ERROR;
+            console.error(e);
             return false;
         }
     }
