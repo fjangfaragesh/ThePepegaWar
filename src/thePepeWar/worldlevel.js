@@ -34,6 +34,8 @@ class WorldLevel {
         for (let n of this.worldLevelNodes) if (nid === n.id) return n;
         return undefined;
     }
+    
+    
     join() {
         this.game.send(new Game.ThreeDGMessageClear());
         for (let ds of this.decorationStructures) this.game.send(new Game.ThreeDGMessageAddStructure(ds));
@@ -49,12 +51,11 @@ class WorldLevel {
     }
     tick() {
         //this.controlProvisorischC2();
-        this.controlProvisorischP2();
         let queOld = this.msgQue;
         this.msgQue = [];
         for (let m of queOld) this.send2(m);
         
-        //TODO
+        this.controlProvisorischP2();
         this.moveProgress = Math.min(this.moveProgress+this.moveProgressSpeed,1.0);
     }
     draw() {
@@ -110,7 +111,13 @@ class WorldLevel {
         if (this.game.userInputStatesManager.isKeyPressed(KEY_LEFT))this.movePlayer("left");
         if (this.game.userInputStatesManager.isKeyPressed(KEY_BKWD)) this.movePlayer("bwd");
         if (this.game.userInputStatesManager.isKeyPressed(KEY_RIGHT)) this.movePlayer("right");
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_UP)) this.activateNode();
     }
+    activateNode() {
+        if (this.moveProgress < 1.0) return;
+        this.onActivateNode(this.currentNodeId);
+    }
+    
     movePlayer(dir) {
         if (this.moveProgress < 1.0) return;
         let n = this.getNodeById(this.currentNodeId);

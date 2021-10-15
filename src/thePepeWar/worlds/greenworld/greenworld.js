@@ -1,7 +1,16 @@
 class GreenWorldLevel extends WorldLevel {
     constructor(game,gamedata) {
         
-        let decoStructures = [new threeDGraphics.SimpleStructure(game.resourceLoader.getValue("3dRes:greenworld"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]))];
+        let decoStructures = [
+            new threeDGraphics.SimpleStructure(
+                game.resourceLoader.getValue("3dRes:greenworld"),
+                new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1])
+            ),
+            new threeDGraphics.SimpleStructure(
+                game.resourceLoader.getValue("3dRes:buildingTypeA"),
+                new Float32Array([0.1,0,0,0, 0,0.1,0,0, 0,0,0.1,0, 14,0,-4,1])
+            )
+        ];
         
         super(game,GreenWorldLevel.NODES,"greenworld_level0",function(x) {alert(x); return false},decoStructures);
         

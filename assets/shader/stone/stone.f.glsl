@@ -44,7 +44,7 @@ vec4 stone(vec3 p) {
 
 void main() {
     vec3 lightDirection = normalize(vec3(-0.5,1.0,0.5));
-    float ligthIntensity = max(0.0, dot(fragNormale,lightDirection))*0.8 + 0.2;
+    float ligthIntensity = max(0.0, dot(fragNormale,lightDirection))*0.8 + 0.2;// 0.2 : ambient ligth
     vec4 texColor = stone(fragCoords);
     
     gl_FragColor = vec4(vec3(texColor)*ligthIntensity,texColor.w);

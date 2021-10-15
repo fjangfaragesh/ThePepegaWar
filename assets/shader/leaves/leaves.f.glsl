@@ -32,6 +32,8 @@ float noise(vec3 p) {
 vec4 grass(vec3 p, float t) {
     //float windX = noise(vec3(t,0.0,0.0));
     //float windY = noise(vec3(t,0.0,0.0));
+    float tpos = t + p.z/2.0;
+    p = p + vec3(sin(tpos*1.1)/10.0,sin(tpos)/10.0,(sin(tpos*0.3)+1.0)*sin(tpos*5.0)/100.0);
     
     vec4 color = vec4(0.2,0.6,0.1, 1.0);
     float n = 1.0 - clamp( noise(p*10.0) + noise(p*50.0+1.3)*0.2, -0.1,0.1);

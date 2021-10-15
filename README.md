@@ -13,15 +13,3 @@ Farbpalette Imphenzia: https://www.youtube.com/channel/UCzfWju7SFoWLCyV_gDVCrGA
 
 Physik:
 https://www.lernhelfer.de/schuelerlexikon/physik-abitur/artikel/einteilung-von-stoessen
-
-## TODOs:
-
-- Resourcen Managment (nacheinander laden von dateien, bauen von resourcen)
-- Beleuchtung
-- post processing (nebel, unschärfe, weichzeichner, farbkurven)
-- Physik
-- Level event system
-- Ein, ausgabe
-- 3dSound
-- Gegner, objekte, ... erstellen
-- Level bauen

@@ -42,7 +42,7 @@ threeDGraphics.World = class{
 
     draw() {
         let gl = this.gl;
-        gl.clearColor(0.5,0.6,0.9,1.0);
+        gl.clearColor(0.5,0.6,0.9,1.0);// TODO als globalConfiguration
         gl.clear(gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         let einheitsmatrix = new Float32Array(16);
         glMatrix.mat4.identity(einheitsmatrix);
@@ -59,7 +59,6 @@ threeDGraphics.World = class{
             glMatrix.mat4.multiply(newtrans, trans, transformation);
             trans=newtrans; 
         }
-  //      alert(trans);
 
         let resources = struc.getRecources();
         for(let r of resources) {
