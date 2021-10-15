@@ -16,6 +16,9 @@ https://www.lernhelfer.de/schuelerlexikon/physik-abitur/artikel/einteilung-von-s
 
 ## [Hier ausprobieren](https://fjangfaragesh.github.io/ThePepegaWar/)
 
+In der Levelauswahl mit W,A,S,D steuern. Leertaste zum Betreten eines Levels (derzeit öffnet überall nur eine Physik Demonstration).  
+In der Physik Demonstration Kamera mit W,A,S,D,Shift,Leertaste steuern, Block mit T,F,G,H,U,J steuern, Musik mit R anschalten (Block ist Soundquelle. Dopplereffekt ist hörbar, wenn sich der Block bewegt. Die Geschwindigkeit der Kamera hat keinen Einfluss auf den Dopplereffekt.
+
 ## Dateien
 
 In [docs](docs) befindet sich die Dokumentation.  
