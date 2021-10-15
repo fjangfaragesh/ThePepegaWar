@@ -80,7 +80,7 @@ threeDGraphics.World = class{
 
 threeDGraphics.TexturedTrianglesResource = class {
     constructor(triangles,image) {
-        //triangles : [{"p1":{x,y,z,tx,ty},"p2":...,"p3":...},...]
+        //triangles : [{"p1":{x,y,z,tx,ty,nx,ny,nz},"p2":...,"p3":...},...]
         this.triangles = triangles;
         this.image = image;
     };
