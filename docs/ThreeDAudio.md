@@ -4,7 +4,7 @@ Enthält verschiedene Audioquellen, die sich an verschiedenen Orten befinden kö
 Weit entfernte Quellen erscheinen leiser, Stereo und Dopplereffekt wird unterstützt.
 
 ## class ThreeDAudio.Player
-constructor(AudioContext audioContext, [String, ...] channelIds)
+### constructor(AudioContext audioContext, [String, ...] channelIds)
 Erstellt einen Audio Player. channelIds ist ein Array und enthält die Ids aller Audio Kanäle.
 In jedem Kanal kann sich nur eine Audio Quelle befinden.
 ### void <- addSound(PlayingSound playingSound, String/[String,...] channelId)
