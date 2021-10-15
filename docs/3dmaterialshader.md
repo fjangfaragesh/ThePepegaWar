@@ -5,3 +5,7 @@ Für jeden Fragment werden die Originalkoordinaten im 3d Raum mit berechnet und 
 Jedem Punkt im 3 Dimensionalen Raum wird mittels einer Kombination aus Noise Funktionen und anderen berechnungen eine Farbe Zugeordnet.
 Schneidet eine Fläche durch den Raum, werden diese Farben auf die Fläche gezeichnet.
 So ist es möglich ein Objekt in einem Material darzustelen, ohne dass Texturkoodinaten berechnet und eine Textur passend zur Form angefertigt werden müssen.
+
+![](img/shader1.jpg)  
+![](img/shader2.jpg)  
+![](img/shader3.jpg)  
