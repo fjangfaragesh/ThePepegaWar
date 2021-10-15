@@ -67,6 +67,7 @@ Game.ThreeDGMessageReceiver = class {
         switch (threeDGMessage.action) {
             case "clear":
                 //throw new Error("not implemented");
+                this.threeDWorld.structures = []; //TODO
                 return;
             case "addStructure":
                 this.threeDWorld.addStructure(threeDGMessage.structure);

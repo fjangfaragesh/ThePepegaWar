@@ -1,5 +1,5 @@
 const ThreeDAudio = {};
-ThreeDAudio.SPEED_OF_SOUND = 343;//343
+ThreeDAudio.SPEED_OF_SOUND = 100;//343
 ThreeDAudio.STEREO_INTENSITY = 0.8;
 
 

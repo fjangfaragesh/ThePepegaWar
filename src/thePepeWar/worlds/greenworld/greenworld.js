@@ -11,8 +11,12 @@ class GreenWorldLevel extends WorldLevel {
                 new Float32Array([0.1,0,0,0, 0,0.1,0,0, 0,0,0.1,0, 14,0,-4,1])
             )
         ];
-        
-        super(game,GreenWorldLevel.NODES,"greenworld_level0",function(x) {alert(x); return false},decoStructures);
+        let f = function() {
+            let lvl = new TestLevel();
+            lvl.init(game);
+            game.changeLevel(lvl);
+        }
+        super(game,GreenWorldLevel.NODES,"greenworld_level0",f,decoStructures);
         
     }
     
