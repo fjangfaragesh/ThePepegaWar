@@ -53,178 +53,6 @@ onload = async function() {
         game.draw();
     }
     setInterval(loop, 10);
-    //onloadOld();
-}
-async function onloadOld() {
-    let actx = new AudioContext();
-    let b = await Loader.loadAudioBuffer("assets/audio/music/A.mp3",actx);
-    let aplayer = new ThreeDAudio.Player(actx,["background-music","lalala"]);
-    let music = new ThreeDAudio.PlayingSound(b, undefined, [999,999,999],[0,0,0], 3.0, true, 0.0);
-    aplayer.addSound(music,"background-music");
-    
-    let userInputStatesManager = new UserInput.StatesManager();
-    
-    
-    let gl = threeDGraphics.initGL(document.getElementById("canv"));
-    glcanv = document.getElementById("canv");
-    let world = new threeDGraphics.World(gl);
-    
-    let loader = new Loader.ResouceLoader();
-    loader.add(Loader.LdResourceLoadFunction([], async function() {return gl}, "GL"),"gl");
-    loader.add(Loader.LdResourceLoadFunction([], async function() {return actx}, "ACTX"),"actx");
-    loader.add(new Loader.LdResourceText("assets/models/basic_shapes/cube_same_texture.obj"),"file:cube_same_texture.obj");
-    loader.add(new Loader.LdResourceText("assets/models/items/coin.obj"),"file:coin.obj");
-    loader.add(new Loader.LdResourceText("assets/models/creatures/scary_ghost.obj"),"file:scary_ghost.obj");
-    loader.add(new Loader.LdResourceText("assets/models/boxes/superbox_blue.obj"),"file:superbox_blue.obj");
-    loader.add(new Loader.LdResourceText("assets/models/boxes/bricks.obj"),"file:bricks.obj");
-    
-    loader.add(new Loader.LdResourceImage("assets/textures/palettes/hsl.png"),"image:hsl");
-    loader.add(new Loader.LdResourceImage("assets/textures/palettes/hsl_desaturated.png"),"image:hsl_desaturated");
-    loader.add(new Loader.LdResourceImage("assets/textures/palettes/imphenzia.png"),"image:imphenzia");
-    loader.add(new Loader.LdResourceImage("assets/textures/test.png"),"image:test");
-    loader.add(new Loader.LdResourceImage("assets/textures/wuhu.png"),"image:whuh");
-
-    loader.add(new TexturedTrianglesResourceLoader("file:superbox_blue.obj","image:imphenzia","gl"), "3dRes:superbox");
-    loader.add(new TexturedTrianglesResourceLoader("file:bricks.obj","image:hsl_desaturated","gl"), "3dRes:bricks");
-    loader.add(new TexturedTrianglesResourceLoader("file:coin.obj","image:hsl","gl"), "3dRes:coin");
-    loader.add(new TexturedTrianglesResourceLoader("file:cube_same_texture.obj","image:test","gl"), "3dRes:test");
-    loader.add(new TexturedTrianglesResourceLoader("file:scary_ghost.obj","image:whuh","gl"), "3dRes:whuh");
-
-    
-    await loader.loadAll();
-    console.log("hau");
-    /*
-    let wuhu = new threeDGraphics.SimpleStructure(
-            loader.getValue("3dRes:whuh"), 
-            new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.5,-3,1])
-        );
-    world.addStructure(wuhu);
-    world.addStructure(
-        new threeDGraphics.SimpleStructure(
-            loader.getValue("3dRes:superbox"), 
-            new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1])
-        )
-    );
-    let coin = new threeDGraphics.SimpleStructure(
-            loader.getValue("3dRes:coin"), 
-            new Float32Array([0.5,0,0,0, 0,0.5,0,0, 0,0,0.5,0, 0,1,0,1])
-    );
-    world.addStructure(coin);
-        
-    world.addStructure(
-        new threeDGraphics.SimpleStructure(
-            loader.getValue("3dRes:test"), 
-            new Float32Array([0.5,0,0,0, 0,0.5,0,0, 0,0,0.5,0, 0,3,-2,1])
-        )
-    );*/
-
-    let box1 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:superbox"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
-    let box2 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
-    let box3 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:bricks"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
-    let box4 = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:superbox"), new Float32Array([0.25,0,0,0, 0,4,0,0, 0,0,3,0, 0,0,0,1]));
-    let bdrdbx = new threeDGraphics.SimpleStructure(loader.getValue("3dRes:test"), new Float32Array([20,0,0,0, 0,1,0,0, 0,0,20,0, 0,-5.5,0,1]));
-    world.addStructure(box1);
-    world.addStructure(box2);
-    world.addStructure(box3);
-    world.addStructure(box4);
-    world.addStructure(bdrdbx);
-
-    let cam = new Camera();
-    cam.ctrlMove(0,-4,0);
-    checkIfCanvasIsLocked(glcanv);
-    
-    let camController = new CamController(cam,userInputStatesManager);
-    
-    
-    let coeffMan = new PhysicsMaterials.CoefficientsManager();
-    
-    pworld = new Physics.World(undefined, coeffMan);
-    b1 = new LoveCube("A",[0,1,0],[0,0,0],2,[1,1,1],false);
-    b2 = new LoveCube("B",[0,-4,0],[0,0,0],1,[1,1,1],false);
-    b3 = new LoveCube("C",[0,3,0],[0,0,0],8,[1,1,1],false);
-    b4 = new LoveCube("D",[4,0,0],[0,0,0],50,[0.25,4,3],false);
-    brdr = new BorderCube("Raum",[0,5,0],[0,0,0],1000000000,[20,20,20],true);
-    pworld.bodys.push(b1);
-    pworld.bodys.push(b2);
-    pworld.bodys.push(b3);
-    pworld.bodys.push(b4);
-    pworld.bodys.push(brdr)
-    pworld.calcPhasePairs();
-    
-    
-    coeffMan.addMaterial(PhysicsMaterials.MATERIALS.WOOD,"wood");
-    coeffMan.addMaterial(PhysicsMaterials.MATERIALS.ICE,"ice");
-    coeffMan.addMaterial(PhysicsMaterials.MATERIALS.RUBBER,"rubber");
-    coeffMan.addMaterial(PhysicsMaterials.MATERIALS.METAL,"metal");
-    
-    coeffMan.useMaterial("A","wood");
-    coeffMan.useMaterial("B","rubber");
-    coeffMan.useMaterial("C","rubber");
-    coeffMan.useMaterial("D","metal");
-    coeffMan.useMaterial("Raum","wood");
-        
-    function loop() {
-        if (userInputStatesManager.isKeyPressed(KEY_ACTION_LEFT)) b1.velocity[0] = (b1.velocity[0] - 1)*0.95;
-        if (userInputStatesManager.isKeyPressed(KEY_ACTION_RIGHT)) b1.velocity[0] = (b1.velocity[0] + 1)*0.95;
-        if (userInputStatesManager.isKeyPressed(KEY_ACTION_DOWN)) b1.velocity[1] = (b1.velocity[1] - 1)*0.95;
-        if (userInputStatesManager.isKeyPressed(KEY_ACTION_UP)) b1.velocity[1] = (b1.velocity[1] + 1)*0.95;
-        if (userInputStatesManager.isKeyPressed(KEY_ACTION_FWD)) b1.velocity[2] = (b1.velocity[2] - 1)*0.95;
-        if (userInputStatesManager.isKeyPressed(KEY_ACTION_BKWD)) b1.velocity[2] = (b1.velocity[2] + 1)*0.95;
-        if (userInputStatesManager.isKeyPressed(KEY_ACTION_STOP)) b1.velocity = [0,0,0];
-
-
-
-        
-        pworld.tick(0.01);
-        music.setPosition([b1.position[0],b1.position[1],b1.position[2]]);
-        music.setVelocity([b1.velocity[0],b1.velocity[1],b1.velocity[2]]);
-        
-        aplayer.ears.setPosition([cam.pos[0],cam.pos[1],cam.pos[2]]);
-        aplayer.ears.setRightEarAxis([Math.cos(cam.ang1),0,Math.sin(cam.ang1)]);
-        aplayer.tick();
-        
-        box1.getTransformation()[12] = b1.position[0];
-        box1.getTransformation()[13] = b1.position[1];
-        box1.getTransformation()[14] = b1.position[2];
-        
-        box2.getTransformation()[12] = b2.position[0];
-        box2.getTransformation()[13] = b2.position[1];
-        box2.getTransformation()[14] = b2.position[2];
-        
-        box3.getTransformation()[12] = b3.position[0];
-        box3.getTransformation()[13] = b3.position[1];
-        box3.getTransformation()[14] = b3.position[2];
-        
-        box4.getTransformation()[12] = b4.position[0];
-        box4.getTransformation()[13] = b4.position[1];
-        box4.getTransformation()[14] = b4.position[2];
-        
-        //bdrdbx.getTransformation()[12] = brdr.position[0];
-        //bdrdbx.getTransformation()[13] = brdr.position[1];
-        //bdrdbx.getTransformation()[14] = brdr.position[2];
-        // glMatrix.mat4.rotateY(coin.getTransformation(),coin.getTransformation(),0.0134);
-        // glMatrix.mat4.rotateY(wuhu.getTransformation(),wuhu.getTransformation(),-0.0461);
-        glcanv.width = window.innerWidth;
-        glcanv.height = window.innerHeight;
-        gl.viewport(0,0,window.innerWidth, innerHeight)
-        cam.setWidthHightRatio(window.innerWidth/window.innerHeight);
-        camController.tick();
-        world.setCamera(cam.updateMatrix());
-        world.draw();
-    }
-    setInterval(loop, 10);
-    
-    function onUserInput(message) {
-        userInputStatesManager.send(message);
-        camController.send(message);
-//        console.log(message);
-    }
-    
-    
-    UserInput.init(onUserInput);
-
-    //pworld.tick(10);
-    
 }
 
 class Camera{
@@ -518,6 +346,13 @@ const RESOURCES = {
     
     "3dRes:greenworld":             new ShadersTrianglesResourceLoader("file:greenworld.obj",SHADER_MATERIAL_IDS,"gl"),
     "3dRes:buildingTypeA":          new TexturedTrianglesResourceLoader("file:buildingTypeA.obj","image:imphenzia","gl"),
+
+    "3dRes:demo_stone_box":         new ShaderTrianglesResourceLoader("file:cube_same_texture.obj","shader:stone","gl"),
+    "3dRes:demo_sand_box":          new ShaderTrianglesResourceLoader("file:cube_same_texture.obj","shader:sand","gl"),
+    "3dRes:demo_water_box":         new ShaderTrianglesResourceLoader("file:cube_same_texture.obj","shader:water","gl"),
+    "3dRes:demo_magic_box":         new ShaderTrianglesResourceLoader("file:cube_same_texture.obj","shader:magic","gl"),
+    "3dRes:demo_grass_box":         new ShaderTrianglesResourceLoader("file:cube_same_texture.obj","shader:grass","gl"),
+    "3dRes:demo_leaves_box":        new ShaderTrianglesResourceLoader("file:cube_same_texture.obj","shader:leaves","gl"),
 
     
     "sound:hallo":                  new Loader.LdResourceAudioBuffer("assets/audio/music/A.mp3","actx")

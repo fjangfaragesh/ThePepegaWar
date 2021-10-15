@@ -1,102 +1,3 @@
-/*
-class GreenWorldLevel {
-    constructor(game) {
-        this.game = undefined;
-        this.msgQue = [];
-        
-        this.game = game;
-        
-        this.worldStruc = new threeDGraphics.SimpleStructure(this.game.resourceLoader.getValue("3dRes:greenworld"), new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]));
-        
-        this.camera = new TestCamera();
-        this.ears = new ThreeDAudio.Ears([0,0,0], [0,0,0], [1,0,0]);
-        
-    }
-    join() {
-        this.game.send(new Game.ThreeDGMessageClear());
-        this.game.send(new Game.ThreeDGMessageAddStructure(this.worldStruc));
-        this.game.send(new Game.ThreeDGMessageSetCamera(this.camera.updateMatrix()));
-    }
-    leave() {
-        this.game.send(new Game.ThreeDGMessageClear());
-    }
-    close() {
-        
-    }
-    tick() {
-        this.controlProvisorisch2();
-        
-        let queOld = this.msgQue;
-        this.msgQue = [];
-        for (let m of queOld) this.send2(m);
-    }
-    draw() {
-        this.game.send(new Game.ThreeDGMessageSetCamera(this.camera.updateMatrix()));
-        this.ears.setPosition([this.camera.pos[0],this.camera.pos[1],this.camera.pos[2]]);
-        this.ears.setRightEarAxis([Math.cos(this.camera.ang1),0,-Math.sin(this.camera.ang1)]);
-        this.game.send(new Game.ThreeDSMessageSetEars(this.ears));
-    }
-    
-    send(levelMessage) {
-        this.msgQue.push(levelMessage);
-    }
-    
-    send2(levelMessage) {
-        switch (levelMessage.type) {
-            case "userinput":
-                this.controlProvisorisch(levelMessage);
-                break;
-            case "userinterfaceinteraction":
-                
-                break;
-            case "playercontrol":
-                
-                break;
-        }
-    }
-    controlProvisorisch(levelMessage) {
-        if (levelMessage.source === "mouse") {
-            if (levelMessage.action === "move") {
-                this.camera.ctrlRot1(-RM_SPEED*levelMessage.deltaX*(this.game.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
-                this.camera.ctrlRot2(-RM_SPEED*levelMessage.deltaY*(this.game.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 0.1 : 1));
-            }
-        }
-    }
-    controlProvisorisch2() {
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_FWD)) this.camera.ctrlMove(0,0,-SPEED);
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_LEFT)) this.camera.ctrlMove(-SPEED,0,0);
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_BKWD)) this.camera.ctrlMove(0,0,SPEED);
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_RIGHT)) this.camera.ctrlMove(SPEED,0,0);
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_UP)) this.camera.ctrlMove(0,SPEED,0);
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_DOWN)) this.camera.ctrlMove(0,-SPEED,0);
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_R_UP)) this.camera.ctrlRot2(-R_SPEED);
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_R_LEFT)) this.camera.ctrlRot1(-R_SPEED);
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_R_DOWN)) this.camera.ctrlRot2(R_SPEED);
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_R_RIGHT)) this.camera.ctrlRot1(R_SPEED);
-        this.camera.setFieldOfView((this.game.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 5/180*Math.PI : 60/180*Math.PI));
-    }
-}
-
-
-class WorldLevelPoint {
-    constructor(x,y,z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.nextLeft = undefined;
-        this.nextRight = undefined;
-        this.nextFront = undefined;
-        this.nextBack = undefined;
-    }
-}
-
-*/
-
-
-
-
-
-
 // kommt wieder in den Restmülleimer:
 
 class TestLevel {
@@ -116,9 +17,14 @@ class TestLevel {
         this.gameObjects.push(this.player);
                 
         this.gameObjects.push(new TestBoden("boden",this.game,this, 0,-2,0));
-        this.gameObjects.push(new TestPlayer("a",this.game,this, 0.1,3,0));
-        this.gameObjects.push(new TestPlayer("b",this.game,this, -0.1,4.5,0));
+        this.gameObjects.push(new TestBox("a",this.game,this, 0.1,3,0.1, "3dRes:demo_stone_box", 10));
+        this.gameObjects.push(new TestBox("b",this.game,this, -0.1,4.5,0.1, "3dRes:demo_sand_box", 10));
         this.gameObjects.push(new TestBricksBlock("c", this.game, this, 2.0, 1.0, 1.0));
+        this.gameObjects.push(new TestBox("d",this.game,this, -0.1,4.5,2.1, "3dRes:demo_water_box", 10));
+        this.gameObjects.push(new TestBox("e",this.game,this, -2.1,4.5,4.1, "3dRes:demo_magic_box", 10));
+        this.gameObjects.push(new TestBox("f",this.game,this, -3.6,4.5,4.1, "3dRes:demo_leaves_box", 10));
+
+        
         
         this.camera = new TestCamera();
         this.ears = new ThreeDAudio.Ears([0,0,0], [0,0,0], [1,0,0]);
@@ -199,12 +105,18 @@ class TestLevel {
         if (this.game.userInputStatesManager.isKeyPressed(KEY_R_RIGHT)) this.camera.ctrlRot1(R_SPEED);
         this.camera.setFieldOfView((this.game.userInputStatesManager.isKeyPressed(KEY_ZOOM) ? 5/180*Math.PI : 60/180*Math.PI));
         
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_LEFT)) this.player.pbody.velocity[0] = (this.player.pbody.velocity[0] - 1)*0.95;
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_RIGHT)) this.player.pbody.velocity[0] = (this.player.pbody.velocity[0] + 1)*0.95;
+        let moveX = 0.0;
+        let moveZ = 0.0;
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_LEFT)) moveX--;
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_RIGHT)) moveX++;
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_FWD)) moveZ--;
+        if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_BKWD)) moveZ++;
+        
+        this.player.pbody.velocity[0] += (moveX*Math.cos(this.camera.ang1) + moveZ*Math.sin(this.camera.ang1))/2;
+        this.player.pbody.velocity[2] += (-moveX*Math.sin(this.camera.ang1) + moveZ*Math.cos(this.camera.ang1))/2;
+        
         if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_DOWN)) this.player.pbody.velocity[1] = (this.player.pbody.velocity[1] - 1)*0.95;
         if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_UP)) this.player.pbody.velocity[1] = (this.player.pbody.velocity[1] + 1)*0.95;
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_FWD)) this.player.pbody.velocity[2] = (this.player.pbody.velocity[2] - 1)*0.95;
-        if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_BKWD)) this.player.pbody.velocity[2] = (this.player.pbody.velocity[2] + 1)*0.95;
         if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_STOP)) this.player.pbody.velocity = [0,0,0];
         
         if (this.game.userInputStatesManager.isKeyPressed(KEY_ACTION_STOP)) this.player.talk();
@@ -290,7 +202,7 @@ class TestPlayer extends TestGameObject {
         let current = this;
         if (!this.isTalking) {
             this.isTalking = true;
-            this.soundExtension.play(this.halloSound, 10.0, ["0","1","2","3"], false, undefined, function() {current.isTalking = false}, this.pbody.position, this.pbody.velocity);
+            this.soundExtension.play(this.halloSound, 10.0, ["0","1","2","3"], true, 0.0, function() {current.isTalking = false}, this.pbody.position, this.pbody.velocity);
         }
     }
     
@@ -312,7 +224,77 @@ class TestPlayer extends TestGameObject {
 TestPlayer.MASS = 70;
 
 
-
+class TestBox extends TestGameObject {
+    constructor(id,game,level, x,y,z, resId, mass) {
+        super(id,game,level);
+        
+        let dimensions = [Math.random()*0.5 + 0.75, Math.random()*0.5 + 0.75, Math.random()*0.5 + 0.75];
+        
+        this.pbody = new BoxBody(id, [x,y,z], [0,0,0],mass, dimensions ,false);
+        
+        this.level.pworld.bodys.push(this.pbody);//naja
+        
+        
+        this.baseTrans = new Float32Array([dimensions[0],0,0,0, 0,dimensions[1],0,0, 0,0,dimensions[2],0, 0,0,0,1]);
+        this.structure = new threeDGraphics.SimpleStructure(game.resourceLoader.getValue(resId), new Float32Array(16));
+        
+        this.soundExtension = new SoundExtension(this);
+        this.isTalking = false;
+        
+        
+        this.halloSound = this.game.resourceLoader.getValue("sound:hallo");
+        
+    }
+    send(levelMessage) {
+        if (levelMessage.type === "playercontrol") {
+            //TODO
+            console.log(levelMessage);
+        }
+    }
+    activate() {
+        super.deactivate();
+        this.soundExtension.activate();
+        this.game.send(new Game.ThreeDGMessageAddStructure(this.structure));
+    }
+    deactivate() {
+        super.activate();
+        this.soundExtension.deactivate();
+        this.game.send(new Game.ThreeDGMessageRemoveStructure(this.structure));
+    }
+    refresh() {
+        super.refresh();
+        threeDGPosUpdate(this.pbody.position, this.structure.getTransformation(),this.baseTrans);
+        this.soundExtension.refresh(this.pbody.position, this.pbody.velocity);
+        
+    }
+    tick() {
+        
+    }
+    
+    
+    talk() {
+        let current = this;
+        if (!this.isTalking) {
+            this.isTalking = true;
+            this.soundExtension.play(this.halloSound, 10.0, ["0","1","2","3"], false, undefined, function() {current.isTalking = false}, this.pbody.position, this.pbody.velocity);
+        }
+    }
+    
+    
+    playSound(audioBufferResId, volumne, channelId, loopEnable, loopStartTime, onEndedF) {
+        let current = this;
+        let s;
+        let onEnded = function() {
+            let i = current.sounds.indexOf(s);
+            if (i !== -1) current.sounds.splice(i,1);
+            if (onEndedF !== undefined) onEndedF();
+        }
+        s = new ThreeDAudio.PlayingSound(this.game.resourceLoader.getValue(audioBufferResId), onEnded, this.pbody.position, this.pbody.velocity, volumne, loopEnable, loopStartTime);
+        
+        this.sounds.push(s);
+        this.game.send(new Game.ThreeDSMessageAddPlayingSound(s,channelId));
+    }
+}
 
 
 
@@ -325,7 +307,7 @@ class TestBoden extends TestGameObject {
         
         
         this.strTrans = new Float32Array(16);
-        this.structure = new threeDGraphics.SimpleStructure(game.resourceLoader.getValue("3dRes:test"), this.strTrans);
+        this.structure = new threeDGraphics.SimpleStructure(game.resourceLoader.getValue("3dRes:demo_grass_box"), this.strTrans);
         
     }
     send(levelMessage) {
@@ -417,7 +399,7 @@ class TestCamera {
         glMatrix.mat4.rotateY(this.matrix,this.matrix, this.ang1);
         glMatrix.mat4.rotateX(this.matrix,this.matrix, this.ang2);
         glMatrix.mat4.rotateZ(this.matrix,this.matrix, this.ang3);
-        glMatrix.mat4.invert(this.matrix, this.matrix)
+        glMatrix.mat4.invert(this.matrix, this.matrix);
         glMatrix.mat4.perspective(this.projectionsMatrix, this.fieldOfView, this.widthHightRatio, this.viewMin, this.viewMax);
         glMatrix.mat4.multiply(this.matrix, this.projectionsMatrix, this.matrix);
         return this.matrix;
@@ -521,8 +503,8 @@ function parsePhases(str, body) {
 }
 
 function threeDGPosUpdate(pos, positionMatrix, baseMatrix) {
-    glMatrix.mat4.copy(positionMatrix, baseMatrix);
-    glMatrix.mat4.translate(positionMatrix,positionMatrix,pos);
+    glMatrix.mat4.fromTranslation(positionMatrix,pos);
+    glMatrix.mat4.multiply(positionMatrix,positionMatrix,baseMatrix);
 }
 
 
