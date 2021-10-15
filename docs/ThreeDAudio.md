@@ -21,7 +21,7 @@ Eine Audioquelle
 ### constructor(AudiBuffer audioBuffer, function onEndedF, [Number,Number,Number] position, [Number,Number,Number] velocity, Number volumne, Boolean loopEnable, Number loopStartTime)
 - audioBuffer: [AudiBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) des Sounds
 - onEndedF: diese Funktion wird ausgeführt, wenn das Abspielen beendet wurde
-- position: Ort der Quelle
+- position: Ort der Quelle. Wenn position=undefined, dann wird der Sound Global abgespielt. Dopplereffekt und Stereo ist deaktiviert und Lautstäke ist Ortsunabhängig
 - velocity: Geschwindigkeit der Quelle
 - volumne: Lautstärke der Quelle (am besten zwischen 0 und 1)
 - loopEnable: wenn es true ist, wird am ende des Sounds zum Zeitpunkt loopStartTime zurück gespuhlt, sonst das Abspielen beendet
