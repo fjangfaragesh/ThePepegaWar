@@ -1,0 +1,36 @@
+@startuml
+class World {
+   constructor(WebGLRenderingContext gl)
+   void addStructure(Structure s)
+   void removeStructure(Structure s)
+   void setGlobalConfiguration(string configurationId, value)
+   void setCamera(Float32Array[16] matrix)
+   void draw()
+}
+
+interface Resource {
+   async void init(WebGLRenderingContext gl)
+   void draw(Float32Array[16] mObject, Object globalConfigurations)
+}
+
+interface Structure {
+   boolean isVisible()
+   Structure[] getSubStructures()
+   Resource[] getRecources()
+   Float32Array[16]/undefined getTransformation()
+}
+class SimpleStructure implements Structure {
+   constructor(Resource resource, Float32Array[16]/undefined transformation)
+   setResource(Resource resource)
+   setTransformation(Float32Array[16]/undefined transformation)
+}
+class TexturedTrianglesResource implements Resource {
+   constructor(Object triangles,HTMLImageElement image)
+}
+class ShaderTrianglesResource implements Resource {
+   constructor(Object triangles,WebGLProgram program)
+}
+class ShadersTrianglesResource implements Resource {
+   constructor(ShaderTrianglesResource[] res)
+}
+@enduml
