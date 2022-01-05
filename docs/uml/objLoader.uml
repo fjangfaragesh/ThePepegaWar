@@ -1,0 +1,11 @@
+@startuml
+class ObjLoader._ {
+   async ObjLoader.Object loadObjFile(string path)
+   ObjLoader.Object loadObjFromString(string objFileContent) 
+}
+class ObjLoader.Object {
+   Object generateTriangles()
+   Object generateTrianglesFromMaterial()
+   Object generateQuadrangleFromId(string fId)
+}
+@enduml
