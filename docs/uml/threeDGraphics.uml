@@ -1,4 +1,8 @@
 @startuml
+class _ {
+   initGL(HTMLCanvasElement canvas)
+}
+
 class World {
    constructor(WebGLRenderingContext gl)
    void addStructure(Structure s)
